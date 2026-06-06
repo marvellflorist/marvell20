@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#efe5d2" />
+    <meta name="description" content="MARVELL 20 portrait booth" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MARVELL 20" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>MARVELL 20</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icons/marvell-logo-favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="styles.css?v=flow-5" />
+  </head>
+  <body>
+    <main class="app-shell" data-view="home">
+      <div class="ambient" aria-hidden="true"></div>
+      <div class="grain" aria-hidden="true"></div>
+
+      <section class="view view-home" aria-labelledby="home-title">
+        <div class="home-center">
+          <h1 id="home-title">MARVELL 20</h1>
+          <button class="action action-primary" id="beginButton" type="button">Begin</button>
+          <button class="action action-secondary" id="archiveButton" type="button" hidden>Archive</button>
+          <p>Portrait Session</p>
+        </div>
+      </section>
+
+      <section class="view view-camera" aria-labelledby="camera-title">
+        <p class="view-label" id="camera-title">Strike a Pose</p>
+        <div class="camera-stage" id="cameraStage">
+          <video id="cameraVideo" autoplay playsinline muted></video>
+          <canvas id="captureCanvas" hidden></canvas>
+          <div class="camera-fallback" id="cameraFallback">
+            <span>Camera</span>
+            <button class="ghost-action" id="sourceButton" type="button">Select Source</button>
+          </div>
+          <div class="countdown" id="countdown" aria-live="polite"></div>
+        </div>
+        <footer class="screen-actions camera-actions">
+          <button class="action action-secondary" id="changeCameraButton" type="button">
+            Change Camera
+          </button>
+          <button class="action action-primary capture-action" id="captureButton" type="button">
+            Capture
+          </button>
+        </footer>
+      </section>
+
+      <section class="view view-review" aria-labelledby="review-title">
+        <p class="view-label" id="review-title">Keep This One?</p>
+        <div class="portrait-focus">
+          <img id="reviewImage" alt="Selected portrait preview" />
+        </div>
+        <div class="thumbnail-row" id="reviewGallery" aria-label="Captured portraits"></div>
+        <footer class="screen-actions">
+          <button class="action action-secondary" id="retakeButton" type="button">Retake</button>
+          <button class="action action-primary" id="toneNextButton" type="button">Continue</button>
+        </footer>
+      </section>
+
+      <section class="view view-tone" aria-labelledby="tone-title">
+        <p class="view-label" id="tone-title">Choose Tone</p>
+        <div class="portrait-focus">
+          <canvas id="toneCanvas" width="1600" height="2400"></canvas>
+        </div>
+        <div class="visual-options" id="toneControls" aria-label="Tone selection"></div>
+        <footer class="screen-actions">
+          <button class="action action-primary" id="paperNextButton" type="button">Continue</button>
+        </footer>
+      </section>
+
+      <section class="view view-paper" aria-labelledby="paper-title">
+        <p class="view-label" id="paper-title">Choose Paper</p>
+        <div class="portrait-focus">
+          <canvas id="paperCanvas" width="1600" height="2400"></canvas>
+        </div>
+        <div class="visual-options" id="paperControls" aria-label="Paper selection"></div>
+        <footer class="screen-actions">
+          <button class="action action-primary" id="finalNextButton" type="button">Continue</button>
+        </footer>
+      </section>
+
+      <section class="view view-final" aria-labelledby="final-title">
+        <p class="view-label" id="final-title">Portrait Ready</p>
+        <div class="portrait-focus final-focus">
+          <canvas id="finalCanvas" width="1600" height="2400"></canvas>
+        </div>
+        <footer class="screen-actions final-actions">
+          <button class="action action-primary" id="exportButton" type="button">Export Portrait</button>
+          <button class="action action-secondary" id="printButton" type="button">Print Portrait</button>
+          <button class="action action-secondary" id="startAgainButton" type="button">Start Again</button>
+        </footer>
+      </section>
+
+      <section class="view view-qr" aria-labelledby="qr-title">
+        <p class="view-label" id="qr-title">Portrait Ready</p>
+        <div class="qr-stage">
+          <canvas id="qrCanvas" width="360" height="360" aria-label="Portrait session QR code"></canvas>
+          <p id="qrStatus">Scan to save your portrait.</p>
+        </div>
+        <footer class="screen-actions export-actions">
+          <button class="action action-primary" id="doneButton" type="button">Done</button>
+        </footer>
+      </section>
+
+      <section class="view view-payment" aria-labelledby="payment-title">
+        <p class="view-label" id="payment-title">Complete Payment</p>
+        <div class="payment-stage">
+          <img id="qrisImage" src="qris-code.webp" alt="QRIS payment code" />
+          <p>Scan the QRIS code and enter Rp20.000 manually.</p>
+          <strong>Show payment confirmation to the operator.</strong>
+        </div>
+        <footer class="screen-actions payment-actions">
+          <button class="action action-primary" id="paymentConfirmedButton" type="button">Payment Confirmed</button>
+          <button class="action action-secondary" id="paymentBackButton" type="button">Back</button>
+        </footer>
+      </section>
+
+      <section class="view view-print" aria-labelledby="print-title">
+        <p class="view-label" id="print-title">Your portrait has been prepared.</p>
+        <div class="print-note">
+          <p>Please collect your print at the desk.</p>
+        </div>
+        <footer class="screen-actions">
+          <button class="action action-primary" id="printDoneButton" type="button">Done</button>
+          <button class="action action-secondary" id="printStartAgainButton" type="button">Start Again</button>
+        </footer>
+      </section>
+
+      <section class="view view-archive" aria-labelledby="archive-title">
+        <p class="view-label" id="archive-title">Archive</p>
+        <div class="archive-stage">
+          <div class="archive-preview">
+            <img id="archivePreviewImage" alt="Archived portrait preview" hidden />
+            <p id="archiveEmpty">No portraits yet.</p>
+          </div>
+          <div class="archive-grid" id="archiveGrid" aria-label="Archived portraits"></div>
+        </div>
+        <footer class="screen-actions archive-actions">
+          <button class="action action-secondary" id="archiveRefreshButton" type="button">Refresh</button>
+          <button class="action action-primary" id="archiveBackButton" type="button">Back</button>
+        </footer>
+      </section>
+
+      <dialog class="camera-dialog" id="cameraDialog">
+        <form method="dialog">
+          <p class="view-label">Camera</p>
+          <select id="cameraSelect" aria-label="Camera source"></select>
+          <menu>
+            <button class="action action-secondary" value="cancel" type="submit">Close</button>
+            <button class="action action-primary" id="applyCameraButton" value="default" type="submit">Use</button>
+          </menu>
+        </form>
+      </dialog>
+    </main>
+
+    <script src="app.js?v=flow-5"></script>
+  </body>
+</html>

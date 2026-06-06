@@ -1,0 +1,282 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#3D0B17" />
+    <meta
+      name="description"
+      content="An editorial digital invitation to MARVELL 20 by Marvell Florist."
+    />
+    <title>MARVELL 20 Invitation</title>
+    <link rel="preload" href="lily.mp4?v=20260606-loop" as="video" type="video/mp4" />
+    <link rel="preload" href="footer.webp" as="image" />
+    <link rel="icon" href="icons/marvell-logo-favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="invitation.css" />
+  </head>
+  <body>
+    <!--
+      Editable links live in invitation.js:
+      mapsUrl,
+      instagramUrl.
+
+      Optional video optimization:
+      ffmpeg -i input.mp4 -vcodec libx264 -crf 24 -preset medium -movflags +faststart -pix_fmt yuv420p output.mp4
+      ffmpeg -i input.mp4 -c:v libvpx-vp9 -crf 32 -b:v 0 -c:a libopus output.webm
+    -->
+    <div class="top-controls">
+      <button class="sound-toggle" id="soundToggle" type="button" aria-label="Play sound" aria-pressed="false" disabled>
+        <svg class="sound-icon sound-icon-on" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M11 5 6 9H3v6h3l5 4V5z" />
+          <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+          <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+        </svg>
+        <svg class="sound-icon sound-icon-off" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M11 5 6 9H3v6h3l5 4V5z" />
+          <path d="m16 9 5 5" />
+          <path d="m21 9-5 5" />
+        </svg>
+      </button>
+      <div class="language-toggle" aria-label="Language">
+        <button class="is-active" type="button" data-lang="en" aria-pressed="true">EN</button>
+        <span aria-hidden="true">/</span>
+        <button type="button" data-lang="id" aria-pressed="false">ID</button>
+      </div>
+    </div>
+    <audio id="backgroundSound" loop preload="none">
+      <source src="JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.mp3" type="audio/mpeg" />
+      <source src="JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.ogg" type="audio/ogg" />
+    </audio>
+
+    <section class="opening-screen" id="openingScreen" aria-labelledby="opening-title">
+      <video
+        class="opening-video"
+        id="openingVideo"
+        muted
+        playsinline
+        preload="auto"
+        aria-hidden="true"
+      >
+        <source src="lily.mp4?v=20260606-loop" type="video/mp4" />
+      </video>
+      <div class="opening-shade" aria-hidden="true"></div>
+
+      <button class="opening-trigger" id="beginInvitation" type="button">
+        <span class="opening-kicker" data-en="An invitation from" data-id="Undangan dari">An invitation from</span>
+        <strong id="opening-title">MARVELL FLORIST</strong>
+        <span class="opening-note" data-en="Tap to begin" data-id="Ketuk untuk mulai">Tap to begin</span>
+      </button>
+    </section>
+
+    <button class="scroll-prompt" id="scrollPrompt" type="button" aria-label="Scroll down" hidden>
+      <span data-en="Scroll" data-id="Gulir">Scroll</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </button>
+
+    <main class="invite-content" id="mainInvitation" aria-label="MARVELL 20 invitation">
+      <section class="main-invite reveal-section" aria-labelledby="event-title">
+        <div class="main-video-shade" aria-hidden="true"></div>
+        <div class="main-invite-copy">
+          <div class="hero-poem">
+            <p data-en="Step into the bloom." data-id="Masuki kelopak yang mekar.">Step into the bloom.</p>
+          </div>
+          <h1 id="event-title">MARVELL 20</h1>
+          <div class="hero-divider" aria-hidden="true">
+            <span></span>
+            <img src="marvell florist logo.svg" alt="" />
+            <span></span>
+          </div>
+          <div class="invite-meta" aria-label="Event details">
+            <p data-en="15 JUNE – 4 JULY 2026" data-id="15 JUNI – 4 JULI 2026">15 JUNE – 4 JULY 2026</p>
+            <p data-en="Daily, 10.00–18.00 WIB" data-id="Setiap hari, 10.00–18.00 WIB">Daily, 10.00–18.00 WIB</p>
+            <address
+              data-en="Ruko Kintamani, Blok C No. 11 · Second Floor"
+              data-id="Ruko Kintamani, Blok C No. 11 · Lantai Dua"
+            >
+              Ruko Kintamani, Blok C No. 11 · Second Floor
+            </address>
+          </div>
+        </div>
+      </section>
+
+      <section class="date-location-section reveal-section" aria-labelledby="meet-title">
+        <div class="date-location-copy">
+          <p class="section-kicker" id="meet-title" data-en="MEET US IN" data-id="TEMUKAN KAMI DI">MEET US IN</p>
+          <h2>
+            <span>Ruko Kintamani</span>
+            <span>Blok C No. 11</span>
+          </h2>
+          <a class="maps-link" id="mapsLink" href="#" target="_blank" rel="noreferrer">
+            <span data-en="Google Maps" data-id="Peta Lokasi">Google Maps</span>
+          </a>
+        </div>
+
+        <div class="countdown-wrap" aria-labelledby="countdown-title">
+          <p class="section-kicker" id="countdown-title">Save the date</p>
+          <div class="countdown" aria-label="Countdown to 15 June 2026 at 10.00">
+            <div>
+              <strong id="days">00</strong>
+              <span data-en="Days" data-id="Hari">Days</span>
+            </div>
+            <div>
+              <strong id="hours">00</strong>
+              <span data-en="Hours" data-id="Jam">Hours</span>
+            </div>
+            <div>
+              <strong id="minutes">00</strong>
+              <span data-en="Minutes" data-id="Menit">Minutes</span>
+            </div>
+            <div>
+              <strong id="seconds">00</strong>
+              <span data-en="Seconds" data-id="Detik">Seconds</span>
+            </div>
+          </div>
+          <button
+            class="calendar-link"
+            id="calendarButton"
+            type="button"
+            data-en="Add to Calendar"
+            data-id="Tambahkan ke Kalender"
+          >
+            Add to Calendar
+          </button>
+        </div>
+      </section>
+
+      <section class="inside-section reveal-section" aria-labelledby="inside-title">
+        <p class="section-kicker" id="inside-title" data-en="What to expect" data-id="Yang Dinantikan">What to expect</p>
+        <div class="program-list">
+          <article class="program-item">
+            <span class="program-number">01</span>
+            <h3 data-en="The Installation" data-id="Instalasi">The Installation</h3>
+            <p
+              data-en="Step into a burgundy floral interior created for MARVELL 20. At the center, a sculptural flower installation becomes the heart of the room - intimate, atmospheric, and designed to be experienced up close."
+              data-id="Masuki ruang floral burgundy yang diciptakan untuk MARVELL 20. Di bagian tengah, instalasi bunga yang sculptural menjadi inti ruangan - intim, atmosferik, dan dirancang untuk dinikmati dari dekat."
+            >
+              Step into a burgundy floral interior created for MARVELL 20. At the center,
+              a sculptural flower installation becomes the heart of the room - intimate,
+              atmospheric, and designed to be experienced up close.
+            </p>
+          </article>
+          <article class="program-item">
+            <span class="program-number">02</span>
+            <h3 data-en="The Flower Counter" data-id="Flower Counter">The Flower Counter</h3>
+            <p
+              data-en="Discover a selection of single-flower bouquets, wrapped simply and made to be carried as a small piece of the bloom. Each piece is designed to feel light, personal, and easy to take home."
+              data-id="Temukan pilihan single-flower bouquet yang dibungkus sederhana, dibuat sebagai bagian kecil dari mekarnya bunga untuk dibawa pulang. Setiap rangkaian terasa ringan, personal, dan mudah dibawa."
+            >
+              Discover a selection of single-flower bouquets, wrapped simply and made to be
+              carried as a small piece of the bloom. Each piece is designed to feel light,
+              personal, and easy to take home.
+            </p>
+          </article>
+          <article class="program-item">
+            <span class="program-number">03</span>
+            <h3 data-en="The Anniversary Drink" data-id="Anniversary Drink">The Anniversary Drink</h3>
+            <p
+              data-en="Extend the visit with a signature anniversary drink, created for the pop-up and served in limited custom cups. A small pause within the floral interior before continuing through the experience."
+              data-id="Lengkapi kunjungan dengan signature anniversary drink yang dibuat khusus untuk pop-up ini dan disajikan dalam custom cup terbatas. Sebuah jeda kecil di dalam ruang floral sebelum melanjutkan pengalaman."
+            >
+              Extend the visit with a signature anniversary drink, created for the pop-up and
+              served in limited custom cups. A small pause within the floral interior before continuing
+              through the experience.
+            </p>
+          </article>
+          <article class="program-item">
+            <span class="program-number">04</span>
+            <h3 data-en="The Photo Stage" data-id="Photo Stage">The Photo Stage</h3>
+            <p
+              data-en="Capture the visit inside a dedicated photo area created for MARVELL 20. Designed with floral details, warm lighting, and a burgundy atmosphere, the photo stage gives guests a memory point within the experience."
+              data-id="Abadikan kunjungan di area foto khusus yang dibuat untuk MARVELL 20. Dengan detail floral, pencahayaan hangat, dan atmosfer burgundy, photo stage menjadi titik memori dalam pengalaman ini."
+            >
+              Capture the visit inside a dedicated photo area created for MARVELL 20. Designed
+              with floral details, warm lighting, and a burgundy atmosphere, the photo stage gives
+              guests a memory point within the experience.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="faq-section reveal-section" aria-labelledby="faq-title">
+        <p class="visit-title" id="faq-title" data-en="Visit Notes" data-id="Catatan Kunjungan">Visit Notes</p>
+        <div class="visit-notes">
+          <article class="visit-note">
+            <h3 data-en="Entry" data-id="Masuk">Entry</h3>
+            <p data-en="Entry is free for all visitors." data-id="Masuk gratis untuk semua pengunjung.">Entry is free for all visitors.</p>
+          </article>
+          <article class="visit-note">
+            <h3 data-en="Reservation" data-id="Reservasi">Reservation</h3>
+            <p
+              data-en="Reservation is recommended due to limited space. Walk-ins may be accepted depending on availability."
+              data-id="Reservasi disarankan karena kapasitas ruang terbatas. Walk-in dapat diterima sesuai ketersediaan."
+            >
+              Reservation is recommended due to limited space. Walk-ins may be accepted depending
+              on availability.
+            </p>
+          </article>
+          <article class="visit-note">
+            <h3 data-en="Photos" data-id="Foto">Photos</h3>
+            <p data-en="Photos are welcome." data-id="Pengambilan foto diperbolehkan.">Photos are welcome.</p>
+          </article>
+          <article class="visit-note">
+            <h3 data-en="Available during the event" data-id="Tersedia selama acara">Available during the event</h3>
+            <p
+              data-en="Anniversary drinks and single-flower bouquets may be available during the event."
+              data-id="Anniversary drink dan single-flower bouquet dapat tersedia selama acara berlangsung."
+            >
+              Anniversary drinks and single-flower bouquets may be available during the event.
+            </p>
+          </article>
+          <article class="visit-note">
+            <h3 data-en="Location" data-id="Lokasi">Location</h3>
+            <p
+              data-en="Ruko Kintamani, Blok C No. 11, second floor."
+              data-id="Ruko Kintamani, Blok C No. 11, lantai dua."
+            >
+              Ruko Kintamani, Blok C No. 11, second floor.
+            </p>
+          </article>
+        </div>
+        <div class="reservation-panel">
+          <a
+            class="reservation-button"
+            href="reservation.html"
+            data-en="Reserve a Visit"
+            data-id="Reservasi Kunjungan"
+          >
+            Reserve a Visit
+          </a>
+          <p
+            class="visit-closing"
+            data-en="We look forward to welcoming you."
+            data-id="Kami menantikan kehadiran Anda."
+          >
+            We look forward to welcoming you.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="invite-footer reveal-section">
+      <div class="footer-shade" aria-hidden="true"></div>
+      <div class="footer-content">
+        <p data-en="With love," data-id="Dengan hangat,">With love,</p>
+        <img src="marvell-florist-logo-outline.svg" alt="" aria-hidden="true" />
+        <strong>Marvell Florist</strong>
+        <span>
+          <span
+            data-en="For any questions or inquiries, contact our email"
+            data-id="Untuk pertanyaan atau informasi lebih lanjut, hubungi email kami"
+          >For any questions or inquiries, contact our email</span>
+          <a href="mailto:floristmarvell@gmail.com">floristmarvell@gmail.com</a>.
+        </span>
+        <a id="websiteLink" href="#" target="_blank" rel="noreferrer">Website</a>
+        <a id="instagramLink" href="#" target="_blank" rel="noreferrer">Instagram</a>
+      </div>
+    </footer>
+
+    <script type="module" src="invitation.js"></script>
+  </body>
+</html>

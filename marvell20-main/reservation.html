@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#3D0B17" />
+    <meta name="description" content="Reserve a visit to MARVELL 20 by Marvell Florist." />
+    <title>Reserve a Visit | MARVELL 20</title>
+    <link rel="icon" href="icons/marvell-logo-favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="invitation.css" />
+  </head>
+  <body class="reservation-page">
+    <main class="reservation-page-shell" aria-labelledby="reservation-title">
+      <a class="reservation-back" href="index.html">Back to invitation</a>
+
+      <section class="reservation-card">
+        <p class="reservation-kicker">MARVELL 20</p>
+        <h1 id="reservation-title">Reserve a Visit</h1>
+        <p class="reservation-intro">
+          Entry is free. Reservation is recommended due to limited space. Each browser session
+          may submit one reservation.
+        </p>
+
+        <!--
+          Custom Google Forms submission checklist:
+          - This form must POST to the formResponse URL, not viewform or forms.gle.
+          - Field names must stay as the exact entry IDs below.
+          - Time option values must match the Google Form options exactly.
+          - Test after deployment and in Live Server via DevTools > Network > formResponse.
+          - In Google Forms, confirm responses are open, sign-in is not required,
+            email collection is off unless intentional, and no required field is missing here.
+        -->
+        <form
+          class="reservation-form"
+          id="reservationForm"
+          action="https://docs.google.com/forms/d/e/1FAIpQLSd7nPfIt60gN1CvwrEQAYQAuia-ZPXpYq-JzGIbo7uUQ9Lwrw/formResponse"
+          method="POST"
+          target="hidden_iframe"
+        >
+          <label>
+            <span>Name</span>
+            <input name="entry.498806352" type="text" autocomplete="name" required />
+          </label>
+
+          <label>
+            <span>Contact</span>
+            <input
+              name="entry.1185414002"
+              type="text"
+              autocomplete="tel"
+              placeholder="Instagram username or phone number"
+              required
+            />
+          </label>
+
+          <label>
+            <span>Preferred visit date</span>
+            <input
+              name="entry.1460613520"
+              id="reservationDate"
+              type="date"
+              min="2026-06-15"
+              max="2026-07-04"
+              required
+            />
+          </label>
+
+          <label>
+            <span>Preferred time</span>
+            <select name="entry.1372940693" required>
+              <option value="" selected disabled>Select a time</option>
+              <option value="10.00- 12.00">10.00- 12.00</option>
+              <option value="12.00- 14.00">12.00- 14.00</option>
+              <option value="14.00- 16.00">14.00- 16.00</option>
+              <option value="16.00- 18.00">16.00- 18.00</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Number of visitors</span>
+            <select name="entry.868486325" required>
+              <option value="" selected disabled>Select visitors</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4+">4+</option>
+            </select>
+          </label>
+
+          <button type="submit">Submit Reservation</button>
+        </form>
+
+        <iframe
+          class="reservation-frame"
+          name="hidden_iframe"
+          title="MARVELL 20 Reservation Form Submission"
+          aria-hidden="true"
+        ></iframe>
+
+        <p class="reservation-status" id="reservationStatus" aria-live="polite"></p>
+        <a
+          class="form-fallback"
+          href="https://docs.google.com/forms/d/e/1FAIpQLSd7nPfIt60gN1CvwrEQAYQAuia-ZPXpYq-JzGIbo7uUQ9Lwrw/viewform?usp=header"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Open reservation form in a new tab
+        </a>
+      </section>
+    </main>
+
+    <script type="module" src="reservation.js"></script>
+  </body>
+</html>

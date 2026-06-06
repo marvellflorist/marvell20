@@ -1,0 +1,27 @@
+{
+  "name": "MARVELL 20",
+  "short_name": "MARVELL 20",
+  "id": "./",
+  "description": "An editorial digital invitation to MARVELL 20 by Marvell Florist.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#3D0B17",
+  "theme_color": "#3D0B17",
+  "icons": [
+    {
+      "src": "icons/marvell-logo-favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

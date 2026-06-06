@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <title>MARVELL 20 Reset</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #efe5d2;
+        --ink: #211b18;
+        --soft: #6e5d51;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100svh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: Arial, sans-serif;
+        text-align: center;
+      }
+
+      main {
+        display: grid;
+        gap: 12px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: 0.08em;
+      }
+
+      p {
+        margin: 0;
+        color: var(--soft);
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MARVELL 20</h1>
+      <p>Refreshing booth files...</p>
+    </main>
+    <script>
+      async function resetBoothCache() {
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((registration) => registration.unregister()));
+        }
+
+        if ("caches" in window) {
+          const names = await caches.keys();
+          await Promise.all(names.map((name) => caches.delete(name)));
+        }
+
+        window.location.replace("./?v=filter-6");
+      }
+
+      resetBoothCache().catch(() => {
+        window.location.replace("./?v=filter-6");
+      });
+    </script>
+  </body>
+</html>
