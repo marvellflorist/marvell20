@@ -1123,6 +1123,10 @@ h2 {
     object-position: 55% center;
   }
 
+  .opening-trigger {
+    padding: max(3.2rem, env(safe-area-inset-top)) 1.4rem max(8.8rem, calc(env(safe-area-inset-bottom) + 8rem));
+  }
+
   .main-invite-copy {
     padding: 1.6rem 0 8.2rem;
     transform: translateY(-1.75rem);
