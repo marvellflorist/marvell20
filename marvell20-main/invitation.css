@@ -1122,6 +1122,15 @@ h2 {
   .opening-video {
     object-position: 55% center;
   }
+
+  .main-invite-copy {
+    padding: 1.6rem 0 8.2rem;
+    transform: translateY(-1.75rem);
+  }
+
+  body.is-crossfading .main-invite-copy {
+    transform: translateY(-2rem);
+  }
 }
 
 @media (max-width: 23rem) {
