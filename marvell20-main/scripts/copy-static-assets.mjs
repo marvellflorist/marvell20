@@ -21,6 +21,8 @@ const files = [
   "whattoexpect.webp",
   "qris-code.webp",
   "lily.mp4",
+  "JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.mp3",
+  "JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.ogg",
   "marvell florist logo.svg",
   "marvell-florist-logo-outline.svg",
 ];

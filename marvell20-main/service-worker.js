@@ -1,4 +1,4 @@
-const CACHE_NAME = "marvell-20-v46";
+const CACHE_NAME = "marvell-20-v47";
 const APP_SHELL = [
   "./manifest.json",
   "./icons/marvell-logo-favicon.svg",
@@ -8,6 +8,8 @@ const APP_SHELL = [
   "./pattern2.webp",
   "./whattoexpect.webp",
   "./lily.mp4",
+  "./JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.mp3",
+  "./JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.ogg",
   "./marvell florist logo.svg",
   "./marvell-florist-logo-outline.svg",
   "./qris-code.webp",
@@ -79,7 +81,6 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
-
 
 
 
