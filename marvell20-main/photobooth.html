@@ -7,34 +7,47 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no"
     />
     <meta name="theme-color" content="#efe5d2" />
-    <meta name="description" content="MARVELL 20 portrait booth" />
+    <meta name="description" content="MARVELL20 portrait booth" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="MARVELL 20" />
+    <meta name="apple-mobile-web-app-title" content="MARVELL20" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>MARVELL 20</title>
+    <title>MARVELL20</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icons/marvell-logo-favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css?v=flow-5" />
+    <link rel="stylesheet" href="styles.css?v=photobooth-33" />
   </head>
   <body>
-    <main class="app-shell" data-view="home">
-      <div class="ambient" aria-hidden="true"></div>
-      <div class="grain" aria-hidden="true"></div>
-
+    <main class="app-shell" data-view="home" data-format="strip">
       <section class="view view-home" aria-labelledby="home-title">
         <div class="home-center">
-          <h1 id="home-title">MARVELL 20</h1>
-          <button class="action action-primary" id="beginButton" type="button">Begin</button>
+          <h1 id="home-title">MARVELL20</h1>
+          <p class="home-subtitle">The Memory Garden</p>
+          <p class="home-date">15 June - 4 July 2026</p>
+          <button class="action action-primary" id="beginButton" type="button">Tap anywhere to begin</button>
           <button class="action action-secondary" id="archiveButton" type="button" hidden>Archive</button>
-          <p>Portrait Session</p>
         </div>
       </section>
 
-      <section class="view view-camera" aria-labelledby="camera-title">
-        <p class="view-label" id="camera-title">Strike a Pose</p>
+      <section class="view view-format" aria-labelledby="format-title">
+        <p class="view-label" id="format-title">Choose Format</p>
+        <div class="format-options" aria-label="Photo format">
+          <button class="format-choice" type="button" data-format-choice="single">
+            <span>Single Photo</span>
+            <canvas id="singleFormatCanvas" width="400" height="600" aria-hidden="true"></canvas>
+          </button>
+          <button class="format-choice" type="button" data-format-choice="strip">
+            <span>Strip of 4</span>
+            <canvas id="stripFormatCanvas" width="240" height="720" aria-hidden="true"></canvas>
+          </button>
+        </div>
+      </section>
+
+      <section class="view view-camera" aria-label="Camera">
+        <p class="view-label" id="camera-title" hidden></p>
         <div class="camera-stage" id="cameraStage">
+          <canvas id="cameraPreviewCanvas" class="camera-preview" aria-hidden="true"></canvas>
           <video id="cameraVideo" autoplay playsinline muted></video>
           <canvas id="captureCanvas" hidden></canvas>
           <div class="camera-fallback" id="cameraFallback">
@@ -42,19 +55,17 @@
             <button class="ghost-action" id="sourceButton" type="button">Select Source</button>
           </div>
           <div class="countdown" id="countdown" aria-live="polite"></div>
+          <button class="capture-action" id="captureButton" type="button" aria-label="Capture"></button>
         </div>
         <footer class="screen-actions camera-actions">
           <button class="action action-secondary" id="changeCameraButton" type="button">
             Change Camera
           </button>
-          <button class="action action-primary capture-action" id="captureButton" type="button">
-            Capture
-          </button>
         </footer>
       </section>
 
       <section class="view view-review" aria-labelledby="review-title">
-        <p class="view-label" id="review-title">Keep This One?</p>
+        <p class="view-label" id="review-title">Review Your Strip</p>
         <div class="portrait-focus">
           <img id="reviewImage" alt="Selected portrait preview" />
         </div>
@@ -88,49 +99,27 @@
       </section>
 
       <section class="view view-final" aria-labelledby="final-title">
-        <p class="view-label" id="final-title">Portrait Ready</p>
+        <p class="view-label" id="final-title">Strip Ready</p>
         <div class="portrait-focus final-focus">
           <canvas id="finalCanvas" width="1600" height="2400"></canvas>
+          <img id="finalGifPreview" alt="" hidden />
         </div>
         <footer class="screen-actions final-actions">
-          <button class="action action-primary" id="exportButton" type="button">Export Portrait</button>
-          <button class="action action-secondary" id="printButton" type="button">Print Portrait</button>
+          <button class="action action-primary" id="exportButton" type="button">Scan Strip</button>
+          <button class="action action-secondary" id="gifButton" type="button">Scan GIF</button>
           <button class="action action-secondary" id="startAgainButton" type="button">Start Again</button>
         </footer>
       </section>
 
-      <section class="view view-qr" aria-labelledby="qr-title">
-        <p class="view-label" id="qr-title">Portrait Ready</p>
-        <div class="qr-stage">
-          <canvas id="qrCanvas" width="360" height="360" aria-label="Portrait session QR code"></canvas>
-          <p id="qrStatus">Scan to save your portrait.</p>
+      <section class="view view-scan" aria-labelledby="scan-title">
+        <p class="view-label" id="scan-title">Scan to Save</p>
+        <div class="cloud-qr" aria-live="polite">
+          <canvas id="qrCanvas" width="260" height="260" hidden></canvas>
+          <p id="qrStatus">Preparing Cloudinary link...</p>
         </div>
-        <footer class="screen-actions export-actions">
-          <button class="action action-primary" id="doneButton" type="button">Done</button>
-        </footer>
-      </section>
-
-      <section class="view view-payment" aria-labelledby="payment-title">
-        <p class="view-label" id="payment-title">Complete Payment</p>
-        <div class="payment-stage">
-          <img id="qrisImage" src="qris-code.webp" alt="QRIS payment code" />
-          <p>Scan the QRIS code and enter Rp20.000 manually.</p>
-          <strong>Show payment confirmation to the operator.</strong>
-        </div>
-        <footer class="screen-actions payment-actions">
-          <button class="action action-primary" id="paymentConfirmedButton" type="button">Payment Confirmed</button>
-          <button class="action action-secondary" id="paymentBackButton" type="button">Back</button>
-        </footer>
-      </section>
-
-      <section class="view view-print" aria-labelledby="print-title">
-        <p class="view-label" id="print-title">Your portrait has been prepared.</p>
-        <div class="print-note">
-          <p>Please collect your print at the desk.</p>
-        </div>
-        <footer class="screen-actions">
-          <button class="action action-primary" id="printDoneButton" type="button">Done</button>
-          <button class="action action-secondary" id="printStartAgainButton" type="button">Start Again</button>
+        <footer class="screen-actions scan-actions">
+          <button class="action action-secondary" id="scanBackButton" type="button">Back</button>
+          <button class="action action-primary" id="scanStartAgainButton" type="button">Start Again</button>
         </footer>
       </section>
 
@@ -161,6 +150,7 @@
       </dialog>
     </main>
 
-    <script src="app.js?v=flow-5"></script>
+    <script src="vendor/gifenc.global.js?v=14"></script>
+    <script src="app.js?v=photobooth-33"></script>
   </body>
 </html>

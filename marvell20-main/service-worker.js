@@ -1,18 +1,23 @@
-const CACHE_NAME = "marvell-20-v47";
+const CACHE_NAME = "marvell-20-v84";
 const APP_SHELL = [
   "./manifest.json",
   "./icons/marvell-logo-favicon.svg",
   "./icons/apple-touch-icon.png",
-  "./background.webp",
-  "./pattern.webp",
-  "./pattern2.webp",
+  "./background.png",
+  "./burgundy.png",
+  "./singleblack.png",
+  "./singlegarden.webp",
+  "./stripburgundy.jpeg",
+  "./stripblack.png",
+  "./stripgarden.png",
+  "./vendor/gifenc.global.js",
+  "./vendor/gifenc.esm.js",
   "./whattoexpect.webp",
   "./lily.mp4",
   "./JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.mp3",
   "./JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.ogg",
   "./marvell florist logo.svg",
   "./marvell-florist-logo-outline.svg",
-  "./qris-code.webp",
   "./Inter-VariableFont_opsz,wght.ttf",
   "./Inter-Italic-VariableFont_opsz,wght.ttf",
   "./Relationship of mélodrame.ttf",
@@ -81,6 +86,3 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
-
-
-

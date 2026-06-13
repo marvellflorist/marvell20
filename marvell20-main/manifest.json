@@ -1,8 +1,8 @@
 {
-  "name": "MARVELL 20",
-  "short_name": "MARVELL 20",
+  "name": "MARVELL20",
+  "short_name": "MARVELL20",
   "id": "./",
-  "description": "An editorial digital invitation to MARVELL 20 by Marvell Florist.",
+  "description": "An editorial digital invitation to MARVELL20 by Marvell Florist.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

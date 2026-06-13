@@ -1,17 +1,23 @@
 const appShell = document.querySelector(".app-shell");
+const homeView = document.querySelector(".view-home");
 const beginButton = document.querySelector("#beginButton");
 const archiveButton = document.querySelector("#archiveButton");
+const formatButtons = document.querySelectorAll("[data-format-choice]");
+const singleFormatCanvas = document.querySelector("#singleFormatCanvas");
+const stripFormatCanvas = document.querySelector("#stripFormatCanvas");
 const sourceButton = document.querySelector("#sourceButton");
 const changeCameraButton = document.querySelector("#changeCameraButton");
 const applyCameraButton = document.querySelector("#applyCameraButton");
 const cameraDialog = document.querySelector("#cameraDialog");
 const cameraSelect = document.querySelector("#cameraSelect");
 const cameraStage = document.querySelector("#cameraStage");
+const cameraPreviewCanvas = document.querySelector("#cameraPreviewCanvas");
 const cameraVideo = document.querySelector("#cameraVideo");
 const cameraFallback = document.querySelector("#cameraFallback");
 const captureCanvas = document.querySelector("#captureCanvas");
 const countdown = document.querySelector("#countdown");
 const captureButton = document.querySelector("#captureButton");
+const reviewTitle = document.querySelector("#review-title");
 const reviewImage = document.querySelector("#reviewImage");
 const reviewGallery = document.querySelector("#reviewGallery");
 const retakeButton = document.querySelector("#retakeButton");
@@ -22,45 +28,47 @@ const paperNextButton = document.querySelector("#paperNextButton");
 const paperCanvas = document.querySelector("#paperCanvas");
 const paperControls = document.querySelector("#paperControls");
 const finalNextButton = document.querySelector("#finalNextButton");
+const finalTitle = document.querySelector("#final-title");
 const finalCanvas = document.querySelector("#finalCanvas");
-const exportButton = document.querySelector("#exportButton");
-const printButton = document.querySelector("#printButton");
-const startAgainButton = document.querySelector("#startAgainButton");
+const finalGifPreview = document.querySelector("#finalGifPreview");
+const finalFocus = document.querySelector(".final-focus");
 const qrCanvas = document.querySelector("#qrCanvas");
 const qrStatus = document.querySelector("#qrStatus");
-const doneButton = document.querySelector("#doneButton");
-const paymentConfirmedButton = document.querySelector("#paymentConfirmedButton");
-const paymentBackButton = document.querySelector("#paymentBackButton");
-const printDoneButton = document.querySelector("#printDoneButton");
-const printStartAgainButton = document.querySelector("#printStartAgainButton");
+const exportButton = document.querySelector("#exportButton");
+const gifButton = document.querySelector("#gifButton");
+const startAgainButton = document.querySelector("#startAgainButton");
+const scanBackButton = document.querySelector("#scanBackButton");
+const scanStartAgainButton = document.querySelector("#scanStartAgainButton");
 const archiveGrid = document.querySelector("#archiveGrid");
 const archivePreviewImage = document.querySelector("#archivePreviewImage");
 const archiveEmpty = document.querySelector("#archiveEmpty");
 const archiveRefreshButton = document.querySelector("#archiveRefreshButton");
 const archiveBackButton = document.querySelector("#archiveBackButton");
 
-const captureCount = 1;
 const portraitSize = { width: 1600, height: 2400 };
-const printSize = { width: 2400, height: 3600 };
-const previewSize = { width: 600, height: 900 };
-const paperPattern = new Image();
-paperPattern.src = "pattern.webp";
-const paperPatternArchive = new Image();
-paperPatternArchive.src = "pattern2.webp";
+const singleFrameSize = { width: 1600, height: 2000 };
+const stripFrameSize = { width: 1600, height: 1200 };
+const stripSize = { width: 1200, height: 3600 };
+const tonePreviewSize = { width: 360, height: 900 };
+const paperPreviewSize = { width: 360, height: 1080 };
+const gifFrameSize = { width: 720, height: 540 };
+const gifPaperSize = { width: 240, height: 720 };
+const singleGifFrameSize = { width: 480, height: 600 };
+const singleGifPaperSize = { width: 600, height: 900 };
 const archiveStoreName = "sessions";
 const cloudinaryCloudName = "dz2ajhfsm";
 const cloudinaryUploadPreset = "marvell20_upload";
-const exportReadyText = "Scan to save your portrait.";
+const cloudinaryUploadFolder = "marvell20";
 const inactivityTimeoutMs = 7 * 60 * 1000;
 const imageCache = new Map();
 const previewCache = new Map();
 let inactivityTimer = null;
 let activeSessionRecord = null;
-let activePrintDataUrl = "";
-let activeExportDownloadUrl = "";
-let activeExportFile = null;
 let archiveRecords = [];
 let selectedArchiveId = "";
+let gifEncoderModulePromise = null;
+let cameraTapCount = 0;
+let cameraTapTimer = null;
 
 const tones = [
   { id: "natural", name: "Natural", filter: "contrast(1.02) saturate(0.96) sepia(0.025) brightness(1.02)" },
@@ -68,9 +76,11 @@ const tones = [
 ];
 
 const papers = [
-  { id: "classic", name: "Garden Reverie", background: "#f4e5cb", ink: "#241c18", accent: "#9a7b49", margin: 112, pattern: "classic" },
-  { id: "archive", name: "Midnight Bloom", background: "#ead8b8", ink: "#4b3325", accent: "#8c724b", margin: 132, pattern: "archive" },
+  { id: "burgundy", name: "Burgundy Velvet", background: "#4f0718", ink: "#fff1d6", accent: "#e0bf78", margin: 112, assets: { single: "burgundy.png", strip: "stripburgundy.jpeg" } },
+  { id: "noir", name: "Noir Satin", background: "#030303", ink: "#b12c2d", accent: "#b12c2d", margin: 112, safeTextStart: 0.792, assets: { single: "singleblack.png", strip: "stripblack.png" } },
+  { id: "garden", name: "Garden Reverie", background: "#edf2df", ink: "#241c18", accent: "#9a7b49", margin: 112, safeTextStart: 0.792, assets: { single: "singlegarden.webp", strip: "stripgarden.png" } },
 ];
+const paperImages = createPaperImages();
 
 const state = {
   stream: null,
@@ -80,14 +90,25 @@ const state = {
   retakeIndex: null,
   selectedTone: "",
   selectedPaper: "",
+  selectedFormat: "strip",
   isCapturing: false,
   audioContext: null,
   sessionId: "",
   previewVersion: 0,
   selectedDeviceId: "",
+  videoClipBlob: null,
+  videoSegments: [],
+  activeRecorder: null,
+  cameraPreviewFrame: 0,
+  isCameraPreviewing: false,
+  finalPreviewTimer: 0,
+  finalPreviewGifBlob: null,
+  finalPreviewGifUrl: "",
+  finalPreviewToken: 0,
 };
 
 function setView(view) {
+  if (view !== "final") stopFinalPreviewLoop();
   appShell.dataset.view = view;
   document.documentElement.dataset.view = view;
   resetInactivityTimer();
@@ -106,6 +127,14 @@ function setBusy(isBusy) {
 
 async function beginSession() {
   resetSession();
+  setView("format");
+}
+
+async function chooseFormat(format) {
+  state.selectedFormat = format === "single" ? "single" : "strip";
+  appShell.dataset.format = state.selectedFormat;
+  document.documentElement.dataset.format = state.selectedFormat;
+  updateFormatUi();
   setView("camera");
   await startCamera();
 }
@@ -116,21 +145,50 @@ function resetSession() {
   state.retakeIndex = null;
   state.selectedTone = "";
   state.selectedPaper = "";
+  state.selectedFormat = "strip";
   state.sessionId = "";
   activeSessionRecord = null;
-  activePrintDataUrl = "";
-  activeExportDownloadUrl = "";
-  activeExportFile = null;
+  clearVideoClip();
   imageCache.clear();
   previewCache.clear();
   state.previewVersion += 1;
-  qrCanvas.hidden = false;
-  qrStatus.textContent = exportReadyText;
-  doneButton.disabled = false;
-  paymentConfirmedButton.disabled = false;
-  paymentBackButton.disabled = false;
+  appShell.dataset.format = state.selectedFormat;
+  document.documentElement.dataset.format = state.selectedFormat;
+  exportButton.textContent = "Scan Strip";
+  gifButton.textContent = "Scan GIF";
+  qrStatus.textContent = "Preparing Cloudinary link...";
+  qrCanvas.hidden = true;
+  exportButton.disabled = false;
+  gifButton.disabled = false;
+  gifButton.hidden = false;
+  updateFormatUi();
   updateStepButtons();
   renderAll().catch(() => {});
+}
+
+function updateFormatUi() {
+  formatButtons.forEach((button) => {
+    const isActive = button.dataset.formatChoice === state.selectedFormat;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+  reviewTitle.textContent = state.selectedFormat === "single" ? "Review Your Photo" : "Review Your Strip";
+  finalTitle.textContent = state.selectedFormat === "single" ? "Photo Ready" : "Strip Ready";
+  exportButton.textContent = state.selectedFormat === "single" ? "Scan Photo" : "Scan Strip";
+  gifButton.hidden = false;
+  gifButton.disabled = false;
+}
+
+function getCaptureCount() {
+  return state.selectedFormat === "single" ? 1 : 4;
+}
+
+function getCaptureSize() {
+  return state.selectedFormat === "single" ? singleFrameSize : stripFrameSize;
+}
+
+function getOutputSize() {
+  return state.selectedFormat === "single" ? portraitSize : stripSize;
 }
 
 async function startCamera(deviceId = state.selectedDeviceId) {
@@ -141,12 +199,13 @@ async function startCamera(deviceId = state.selectedDeviceId) {
     return;
   }
 
+  const captureSize = getCaptureSize();
   const constraints = {
     audio: false,
     video: {
-      width: { ideal: 1920 },
-      height: { ideal: 2880 },
-      aspectRatio: { ideal: portraitSize.width / portraitSize.height },
+      width: { ideal: captureSize.width },
+      height: { ideal: captureSize.height },
+      aspectRatio: { ideal: captureSize.width / captureSize.height },
       frameRate: { ideal: 30, max: 60 },
       facingMode: "user",
     },
@@ -162,6 +221,7 @@ async function startCamera(deviceId = state.selectedDeviceId) {
     cameraVideo.srcObject = state.stream;
     cameraFallback.classList.add("is-hidden");
     await cameraVideo.play();
+    startCameraPreview();
     state.selectedDeviceId =
       state.stream.getVideoTracks()[0]?.getSettings().deviceId || deviceId || "";
     await refreshCameraDevices();
@@ -171,12 +231,14 @@ async function startCamera(deviceId = state.selectedDeviceId) {
 }
 
 function stopCamera() {
+  stopCameraPreview();
   if (!state.stream) return;
   state.stream.getTracks().forEach((track) => track.stop());
   state.stream = null;
 }
 
 function showCameraFallback() {
+  stopCameraPreview();
   cameraFallback.classList.remove("is-hidden");
 }
 
@@ -207,6 +269,16 @@ async function refreshCameraDevices() {
   }
 }
 
+async function cycleCamera() {
+  if (state.isCapturing) return;
+  await refreshCameraDevices();
+  if (state.devices.length < 2) return;
+
+  const currentIndex = state.devices.findIndex((device) => device.deviceId === state.selectedDeviceId);
+  const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % state.devices.length : 0;
+  await startCamera(state.devices[nextIndex].deviceId);
+}
+
 async function openCameraDialog() {
   await refreshCameraDevices();
   applyCameraButton.disabled = !state.devices.length;
@@ -219,7 +291,12 @@ async function captureFlow() {
   setBusy(true);
   await unlockAudio();
 
-  const targetCount = state.retakeIndex === null ? captureCount : 1;
+  const retakeSlot = state.retakeIndex;
+  const isRetake = retakeSlot !== null;
+  const targetCount = state.retakeIndex === null ? getCaptureCount() : 1;
+  const shouldRecordClip = true;
+  if (shouldRecordClip && !isRetake) clearVideoClip();
+  const recording = shouldRecordClip ? startCameraRecording() : null;
 
   if (state.retakeIndex === null) {
     state.captures = [];
@@ -233,8 +310,9 @@ async function captureFlow() {
       state.captures.push(capture);
       state.selectedIndex = state.captures.length - 1;
     } else {
-      state.captures[state.retakeIndex] = capture;
-      state.selectedIndex = state.retakeIndex;
+      state.captures[retakeSlot] = capture;
+      state.selectedIndex = retakeSlot;
+      state.videoSegments[retakeSlot] = null;
       state.retakeIndex = null;
     }
     invalidatePreviewCache();
@@ -248,16 +326,159 @@ async function captureFlow() {
   state.selectedTone = "";
   state.selectedPaper = "";
   try {
+    if (recording) {
+      const videoClip = await stopCameraRecording(recording);
+      if (videoClip?.size) {
+        if (isRetake) {
+          state.videoSegments[retakeSlot] = createGifSegment(videoClip);
+        } else {
+          state.videoClipBlob = videoClip;
+          state.videoSegments = createGifSegments(videoClip, targetCount);
+        }
+      }
+    }
     await preloadSelectedCaptureImage();
     await renderAll();
   } finally {
+    if (recording && state.activeRecorder) {
+      await stopCameraRecording(recording).catch(() => {});
+    }
     setBusy(false);
   }
   setView("review");
 }
 
+function getSupportedRecordingType() {
+  if (!window.MediaRecorder) return "";
+  return [
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm",
+  ].find((type) => MediaRecorder.isTypeSupported(type)) || "";
+}
+
+function drawCameraFrame(context, width, height) {
+  context.fillStyle = "#211b18";
+  context.fillRect(0, 0, width, height);
+
+  if (cameraVideo.videoWidth && cameraVideo.videoHeight) {
+    context.save();
+    context.translate(width, 0);
+    context.scale(-1, 1);
+    drawCoverImage(context, cameraVideo, 0, 0, width, height);
+    context.restore();
+    return;
+  }
+
+  drawFallbackPortrait(context, width, height);
+}
+
+function syncCameraPreviewSize() {
+  const bounds = cameraStage.getBoundingClientRect();
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const width = Math.max(1, Math.round(bounds.width * ratio));
+  const height = Math.max(1, Math.round(bounds.height * ratio));
+
+  if (cameraPreviewCanvas.width !== width || cameraPreviewCanvas.height !== height) {
+    cameraPreviewCanvas.width = width;
+    cameraPreviewCanvas.height = height;
+  }
+}
+
+function drawCameraPreview() {
+  if (!state.isCameraPreviewing) return;
+
+  syncCameraPreviewSize();
+  const context = cameraPreviewCanvas.getContext("2d");
+  drawCameraFrame(context, cameraPreviewCanvas.width, cameraPreviewCanvas.height);
+  state.cameraPreviewFrame = window.requestAnimationFrame(drawCameraPreview);
+}
+
+function startCameraPreview() {
+  if (state.isCameraPreviewing) return;
+
+  state.isCameraPreviewing = true;
+  drawCameraPreview();
+}
+
+function stopCameraPreview() {
+  state.isCameraPreviewing = false;
+  window.cancelAnimationFrame(state.cameraPreviewFrame);
+  state.cameraPreviewFrame = 0;
+}
+
+function startCameraRecording() {
+  if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return null;
+
+  const mimeType = getSupportedRecordingType();
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  const recordSize = state.selectedFormat === "single" ? singleGifFrameSize : gifFrameSize;
+  let animationFrame = 0;
+  let isStopped = false;
+
+  canvas.width = recordSize.width;
+  canvas.height = recordSize.height;
+
+  const drawRecordingFrame = () => {
+    drawCameraFrame(context, canvas.width, canvas.height);
+
+    if (!isStopped) {
+      animationFrame = window.requestAnimationFrame(drawRecordingFrame);
+    }
+  };
+
+  const stream = canvas.captureStream(12);
+  const chunks = [];
+  let recorder;
+
+  try {
+    recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+  } catch (error) {
+    stream.getTracks().forEach((track) => track.stop());
+    return null;
+  }
+
+  state.activeRecorder = recorder;
+
+  const cleanup = () => {
+    isStopped = true;
+    window.cancelAnimationFrame(animationFrame);
+    stream.getTracks().forEach((track) => track.stop());
+  };
+
+  const complete = new Promise((resolve) => {
+    recorder.addEventListener("dataavailable", (event) => {
+      if (event.data?.size) chunks.push(event.data);
+    });
+    recorder.addEventListener("stop", () => {
+      cleanup();
+      state.activeRecorder = null;
+      resolve(new Blob(chunks, { type: recorder.mimeType || "video/webm" }));
+    }, { once: true });
+  });
+
+  try {
+    drawRecordingFrame();
+    recorder.start();
+  } catch (error) {
+    cleanup();
+    state.activeRecorder = null;
+    return null;
+  }
+
+  return { recorder, complete, cleanup };
+}
+
+async function stopCameraRecording(recording) {
+  if (!recording) return null;
+  if (recording.recorder.state === "recording") recording.recorder.stop();
+  else recording.cleanup?.();
+  return recording.complete;
+}
+
 async function runCountdown() {
-  for (const beat of ["3", "2", "1"]) {
+  for (const beat of ["5", "4", "3", "2", "1"]) {
     countdown.textContent = beat;
     countdown.classList.add("is-visible");
     await sleep(560);
@@ -267,37 +488,12 @@ async function runCountdown() {
 }
 
 function capturePortrait() {
-  const hasVideo = cameraVideo.videoWidth && cameraVideo.videoHeight;
-  const sourceWidth = hasVideo ? cameraVideo.videoWidth : 1920;
-  const sourceHeight = hasVideo ? cameraVideo.videoHeight : 2400;
-  const targetRatio = portraitSize.width / portraitSize.height;
-  const sourceRatio = sourceWidth / sourceHeight;
-  let sx = 0;
-  let sy = 0;
-  let sw = sourceWidth;
-  let sh = sourceHeight;
+  const captureSize = getCaptureSize();
 
-  if (sourceRatio > targetRatio) {
-    sw = sourceHeight * targetRatio;
-    sx = (sourceWidth - sw) / 2;
-  } else {
-    sh = sourceWidth / targetRatio;
-    sy = (sourceHeight - sh) / 2;
-  }
-
-  captureCanvas.width = portraitSize.width;
-  captureCanvas.height = portraitSize.height;
+  captureCanvas.width = captureSize.width;
+  captureCanvas.height = captureSize.height;
   const context = captureCanvas.getContext("2d");
-
-  if (hasVideo) {
-    context.save();
-    context.translate(portraitSize.width, 0);
-    context.scale(-1, 1);
-    context.drawImage(cameraVideo, sx, sy, sw, sh, 0, 0, portraitSize.width, portraitSize.height);
-    context.restore();
-  } else {
-    drawFallbackPortrait(context, portraitSize.width, portraitSize.height);
-  }
+  drawCameraFrame(context, captureSize.width, captureSize.height);
 
   return captureCanvas.toDataURL("image/jpeg", 0.94);
 }
@@ -312,7 +508,7 @@ function drawFallbackPortrait(context, width, height) {
   context.fillStyle = "rgba(238,229,213,0.74)";
   context.font = `${Math.round(width * 0.08)}px Inter Variable`;
   context.textAlign = "center";
-  context.fillText("MARVELL 20", width / 2, height / 2);
+  context.fillText("MARVELL20", width / 2, height / 2);
 }
 
 async function unlockAudio() {
@@ -352,13 +548,24 @@ function invalidatePreviewCache(clearImages = false) {
   state.previewVersion += 1;
   previewCache.clear();
   if (clearImages) imageCache.clear();
+  markFinalDirty();
 }
 
 function markFinalDirty() {
   activeSessionRecord = null;
-  activePrintDataUrl = "";
-  activeExportDownloadUrl = "";
-  activeExportFile = null;
+}
+
+function clearVideoClip() {
+  if (state.activeRecorder?.state === "recording") {
+    try {
+      state.activeRecorder.stop();
+    } catch (error) {
+      console.warn("MARVELL20 recorder stop failed", error);
+    }
+  }
+  state.activeRecorder = null;
+  state.videoClipBlob = null;
+  state.videoSegments = [];
 }
 
 function updateStepButtons() {
@@ -368,12 +575,21 @@ function updateStepButtons() {
 
 async function renderAll() {
   renderReview();
-  const image = await preloadSelectedCaptureImage();
+  const images = await preloadCaptureImages();
+  const outputSize = getOutputSize();
   await Promise.all([
-    renderToneControls(image),
-    renderPaperControls(image),
-    renderComposition(finalCanvas, { width: portraitSize.width, height: portraitSize.height, image }),
+    renderToneControls(images),
+    renderPaperControls(images),
+    renderComposition(finalCanvas, { width: outputSize.width, height: outputSize.height, images }),
   ]);
+}
+
+function getTonePreviewSize() {
+  return state.selectedFormat === "single" ? { width: 560, height: 700 } : tonePreviewSize;
+}
+
+function getPaperPreviewSize() {
+  return state.selectedFormat === "single" ? { width: 560, height: 840 } : paperPreviewSize;
 }
 
 function createSessionId() {
@@ -406,6 +622,56 @@ function renderReview() {
   });
 }
 
+function drawFormatSamples() {
+  drawSingleFormatSample(singleFormatCanvas);
+  drawStripFormatSample(stripFormatCanvas);
+}
+
+function drawSingleFormatSample(canvas) {
+  if (!canvas) return;
+  const context = canvas.getContext("2d");
+  const { width, height } = canvas;
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = "#000";
+  context.lineWidth = 1;
+  context.strokeRect(0.5, 0.5, width - 1, height - 1);
+
+  const margin = Math.round(width * 0.1);
+  const imageWidth = width - margin * 2;
+  const imageHeight = Math.round(imageWidth * 1.25);
+  drawFormatImageSlot(context, margin, margin, imageWidth, imageHeight);
+}
+
+function drawStripFormatSample(canvas) {
+  if (!canvas) return;
+  const context = canvas.getContext("2d");
+  const { width, height } = canvas;
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = "#000";
+  context.lineWidth = 1;
+  context.strokeRect(0.5, 0.5, width - 1, height - 1);
+
+  const margin = Math.round(width * 0.11);
+  const imageWidth = width - margin * 2;
+  const imageHeight = Math.round(imageWidth * 0.75);
+  const gap = (height - margin * 2 - imageHeight * 4) / 3;
+  for (let index = 0; index < 4; index += 1) {
+    drawFormatImageSlot(context, margin, margin + index * (imageHeight + gap), imageWidth, imageHeight);
+  }
+}
+
+function drawFormatImageSlot(context, x, y, width, height) {
+  context.fillStyle = "#151515";
+  context.fillRect(x, y, width, height);
+  context.strokeStyle = "#000";
+  context.lineWidth = 0.75;
+  context.strokeRect(x, y, width, height);
+}
+
 function updateChoiceActiveState(container, selectedId) {
   container.querySelectorAll(".visual-choice").forEach((button) => {
     const isActive = button.dataset.choiceId === selectedId;
@@ -414,18 +680,21 @@ function updateChoiceActiveState(container, selectedId) {
   });
 }
 
-async function renderToneControls(image) {
+async function renderToneControls(images) {
+  const currentPreviewSize = getTonePreviewSize();
   const renderedButtons = await Promise.all(tones.map(async (tone) => {
     const canvas = document.createElement("canvas");
-    canvas.width = previewSize.width;
-    canvas.height = previewSize.height;
+    canvas.width = currentPreviewSize.width;
+    canvas.height = currentPreviewSize.height;
+    canvas.style.aspectRatio = `${currentPreviewSize.width} / ${currentPreviewSize.height}`;
+    canvas.style.height = "auto";
     await renderCachedComposition(canvas, {
-      width: previewSize.width,
-      height: previewSize.height,
+      width: currentPreviewSize.width,
+      height: currentPreviewSize.height,
       toneId: tone.id,
       paperless: true,
       compact: true,
-      image,
+      images,
     });
 
     const button = document.createElement("button");
@@ -443,10 +712,11 @@ async function renderToneControls(image) {
       updateChoiceActiveState(toneControls, tone.id);
       updateChoiceActiveState(paperControls, "");
       updateStepButtons();
-      const selectedImage = await preloadSelectedCaptureImage();
+      const selectedImages = await preloadCaptureImages();
+      const outputSize = getOutputSize();
       await Promise.all([
-        renderPaperControls(selectedImage),
-        renderComposition(finalCanvas, { width: portraitSize.width, height: portraitSize.height, image: selectedImage }),
+        renderPaperControls(selectedImages),
+        renderComposition(finalCanvas, { width: outputSize.width, height: outputSize.height, images: selectedImages }),
       ]);
     });
     return button;
@@ -456,18 +726,19 @@ async function renderToneControls(image) {
   updateStepButtons();
 }
 
-async function renderPaperControls(image) {
-  const renderedButtons = await Promise.all(papers.map(async (paper) => {
+async function renderPaperControls(images) {
+  const currentPreviewSize = getPaperPreviewSize();
+  const renderedChoices = await Promise.all(getAvailablePapers().map(async (paper) => {
     const canvas = document.createElement("canvas");
-    canvas.width = previewSize.width;
-    canvas.height = previewSize.height;
+    canvas.width = currentPreviewSize.width;
+    canvas.height = currentPreviewSize.height;
     await renderCachedComposition(canvas, {
-      width: previewSize.width,
-      height: previewSize.height,
+      width: currentPreviewSize.width,
+      height: currentPreviewSize.height,
       toneId: state.selectedTone,
       paperId: paper.id,
       compact: true,
-      image,
+      images,
     });
 
     const button = document.createElement("button");
@@ -476,23 +747,32 @@ async function renderPaperControls(image) {
     button.dataset.choiceId = paper.id;
     button.classList.toggle("is-active", paper.id === state.selectedPaper);
     button.setAttribute("aria-pressed", paper.id === state.selectedPaper ? "true" : "false");
-    button.innerHTML = `<span>${paper.name}</span>`;
-    button.prepend(canvas);
+    button.setAttribute("aria-label", paper.name);
+    button.append(canvas);
     button.addEventListener("click", async () => {
       state.selectedPaper = paper.id;
       markFinalDirty();
       updateChoiceActiveState(paperControls, paper.id);
       updateStepButtons();
-      const selectedImage = await preloadSelectedCaptureImage();
+      const selectedImages = await preloadCaptureImages();
+      const outputSize = getOutputSize();
       await Promise.all([
-        renderCachedComposition(paperCanvas, { width: portraitSize.width, height: portraitSize.height, image: selectedImage }),
-        renderComposition(finalCanvas, { width: portraitSize.width, height: portraitSize.height, image: selectedImage }),
+        renderCachedComposition(paperCanvas, { width: outputSize.width, height: outputSize.height, images: selectedImages }),
+        renderComposition(finalCanvas, { width: outputSize.width, height: outputSize.height, images: selectedImages }),
       ]);
     });
-    return button;
+
+    const label = document.createElement("span");
+    label.className = "paper-choice-label";
+    label.textContent = paper.name;
+
+    const choice = document.createElement("div");
+    choice.className = "paper-choice-wrap";
+    choice.append(button, label);
+    return choice;
   }));
 
-  paperControls.replaceChildren(...renderedButtons);
+  paperControls.replaceChildren(...renderedChoices);
   updateStepButtons();
 }
 
@@ -500,8 +780,32 @@ function getTone(id = state.selectedTone) {
   return tones.find((tone) => tone.id === id) || tones[0];
 }
 
+function getAvailablePapers(format = state.selectedFormat) {
+  return papers.filter((paper) => paper.assets?.[format]);
+}
+
 function getPaper(id = state.selectedPaper) {
-  return papers.find((paper) => paper.id === id) || papers[0];
+  const availablePapers = getAvailablePapers();
+  return availablePapers.find((paper) => paper.id === id) || availablePapers[0] || papers[0];
+}
+
+function createPaperImages() {
+  return papers.reduce((images, paper) => {
+    Object.values(paper.assets || {}).forEach((source) => {
+      if (images[source]) return;
+
+      const image = new Image();
+      image.src = source;
+      image.addEventListener("load", refreshRenderedPreviews);
+      images[source] = image;
+    });
+
+    return images;
+  }, {});
+}
+
+function getPaperImage(paper, format = state.selectedFormat) {
+  return paperImages[paper.assets?.[format]] || null;
 }
 
 async function loadImage(source) {
@@ -531,6 +835,10 @@ async function preloadSelectedCaptureImage() {
   return loadImage(getSelectedCapture());
 }
 
+async function preloadCaptureImages() {
+  return Promise.all(state.captures.map((capture) => loadImage(capture)));
+}
+
 function createPreviewCacheKey(options) {
   const width = options.width || portraitSize.width;
   const height = options.height || portraitSize.height;
@@ -540,6 +848,7 @@ function createPreviewCacheKey(options) {
     height,
     options.toneId || state.selectedTone,
     options.paperId || state.selectedPaper,
+    options.format || state.selectedFormat,
     options.paperless ? "paperless" : "paper",
     options.compact ? "compact" : "full",
   ].join(":");
@@ -568,26 +877,33 @@ async function renderCachedComposition(canvas, options = {}) {
 }
 
 async function renderComposition(canvas, options = {}) {
-  const width = options.width || portraitSize.width;
-  const height = options.height || portraitSize.height;
+  const format = options.format || state.selectedFormat;
+  const outputSize = format === "single" ? portraitSize : stripSize;
+  const width = options.width || outputSize.width;
+  const height = options.height || outputSize.height;
   const tone = getTone(options.toneId);
   const paper = getPaper(options.paperId);
   const context = canvas.getContext("2d");
-  const image = options.image || await preloadSelectedCaptureImage();
+  const images = options.images || await preloadCaptureImages();
 
   canvas.width = width;
   canvas.height = height;
   canvas.dataset.ratio = `${width}x${height}`;
 
   if (options.paperless) {
-    drawToneOnlyComposition(context, image, tone, width, height, options.compact);
+    drawToneOnlyComposition(context, images, tone, width, height, options.compact, format);
     return;
   }
 
-  drawPortraitComposition(context, image, tone, paper, width, height, options.compact);
+  if (format === "single") {
+    drawSingleComposition(context, images[0], tone, paper, width, height, options.compact);
+    return;
+  }
+
+  drawStripComposition(context, images, tone, paper, width, height, options.compact);
 }
 
-function drawPortraitComposition(context, image, tone, paper, width, height, compact = false) {
+function drawSingleComposition(context, image, tone, paper, width, height, compact = false) {
   drawPaper(context, paper, width, height);
 
   const margin = compact ? Math.round(width * 0.07) : Math.round(paper.margin * (width / portraitSize.width));
@@ -605,10 +921,85 @@ function drawPortraitComposition(context, image, tone, paper, width, height, com
   }
 }
 
-function drawToneOnlyComposition(context, image, tone, width, height, compact = false) {
+function drawStripComposition(context, images, tone, paper, width, height, compact = false) {
+  drawPaper(context, paper, width, height);
+
+  const layout = getStripLayout(width, height, compact);
+  layout.frames.forEach((frame, index) => {
+    drawTonedImage(context, images[index], tone, frame);
+  });
+
+  if (tone.id === "archive") {
+    drawFineGrain(context, width, height, compact ? 7 : 11);
+  }
+}
+
+function getStripLayout(width, height, compact = false) {
+  const ratio = stripFrameSize.width / stripFrameSize.height;
+  const count = getCaptureCount();
+  const sideMargin = Math.round(width * (compact ? 0.085 : 0.085));
+  const gap = Math.round(width * (compact ? 0.035 : 0.035));
+  const frameWidth = width - sideMargin * 2;
+  const frameHeight = Math.floor(frameWidth / ratio);
+  const stackHeight = frameHeight * count + gap * Math.max(0, count - 1);
+  const top = sideMargin;
+
+  const left = Math.round((width - frameWidth) / 2);
+  return {
+    frames: Array.from({ length: count }, (_, index) => ({
+      x: left,
+      y: top + index * (frameHeight + gap),
+      width: frameWidth,
+      height: frameHeight,
+    })),
+  };
+}
+
+async function drawVideoStripComposition(context, sources, tone, paper, width, height, localTime) {
+  drawPaper(context, paper, width, height);
+
+  const layout = getStripLayout(width, height, true);
+  for (let index = 0; index < layout.frames.length; index += 1) {
+    const source = sources[index];
+    const frame = layout.frames[index];
+
+    if (source?.video) {
+      const time = Math.min(source.endTime, source.startTime + localTime);
+      await seekVideo(source.video, Math.max(source.startTime, time));
+      drawTonedImage(context, source.video, tone, frame);
+    } else {
+      drawTonedImage(context, source?.image, tone, frame);
+    }
+  }
+
+  if (tone.id === "archive") {
+    drawFineGrain(context, width, height, 7);
+  }
+}
+
+function drawToneOnlyComposition(context, images, tone, width, height, compact = false, format = state.selectedFormat) {
   context.fillStyle = "#211b18";
   context.fillRect(0, 0, width, height);
-  drawTonedImage(context, image, tone, { x: 0, y: 0, width, height });
+
+  if (format === "single") {
+    drawTonedImage(context, images[0], tone, { x: 0, y: 0, width, height });
+    if (tone.id === "archive") {
+      drawFineGrain(context, width, height, compact ? 7 : 11);
+    }
+    return;
+  }
+
+  const gap = Math.round(width * 0.032);
+  const frameHeight = Math.floor((height - gap * (getCaptureCount() - 1)) / getCaptureCount());
+  for (let index = 0; index < getCaptureCount(); index += 1) {
+    drawTonedImage(context, images[index], tone, {
+      x: 0,
+      y: index * (frameHeight + gap),
+      width,
+      height: frameHeight,
+    });
+  }
+
   if (tone.id === "archive") {
     drawFineGrain(context, width, height, compact ? 7 : 11);
   }
@@ -618,11 +1009,18 @@ function drawPaper(context, paper, width, height) {
   context.fillStyle = paper.background;
   context.fillRect(0, 0, width, height);
 
-  const patternImage = paper.pattern === "archive" ? paperPatternArchive : paperPattern;
-  if (paper.pattern && patternImage.complete && patternImage.naturalWidth) {
+  const paperImage = getPaperImage(paper);
+  if (paperImage?.complete && paperImage.naturalWidth) {
     context.save();
-    context.globalAlpha = paper.pattern === "archive" ? 0.9 : 0.82;
-    drawCoverImage(context, patternImage, 0, 0, width, height);
+    drawCoverImage(context, paperImage, 0, 0, width, height);
+    context.restore();
+  }
+
+  if (paper.tint) {
+    context.save();
+    context.globalCompositeOperation = "multiply";
+    context.fillStyle = paper.tint;
+    context.fillRect(0, 0, width, height);
     context.restore();
   }
 }
@@ -664,26 +1062,30 @@ function drawPlaceholder(context, frame) {
 }
 
 function drawCoverImage(context, image, x, y, width, height) {
-  const imageRatio = image.width / image.height;
+  const sourceWidth = image.videoWidth || image.naturalWidth || image.width;
+  const sourceHeight = image.videoHeight || image.naturalHeight || image.height;
+  const imageRatio = sourceWidth / sourceHeight;
   const frameRatio = width / height;
-  let sw = image.width;
-  let sh = image.height;
+  let sw = sourceWidth;
+  let sh = sourceHeight;
   let sx = 0;
   let sy = 0;
 
   if (imageRatio > frameRatio) {
-    sw = image.height * frameRatio;
-    sx = (image.width - sw) / 2;
+    sw = sourceHeight * frameRatio;
+    sx = (sourceWidth - sw) / 2;
   } else {
-    sh = image.width / frameRatio;
-    sy = (image.height - sh) / 2;
+    sh = sourceWidth / frameRatio;
+    sy = (sourceHeight - sh) / 2;
   }
 
   context.drawImage(image, sx, sy, sw, sh, x, y, width, height);
 }
 
 function drawContainImage(context, image, x, y, width, height) {
-  const imageRatio = image.width / image.height;
+  const sourceWidth = image.videoWidth || image.naturalWidth || image.width;
+  const sourceHeight = image.videoHeight || image.naturalHeight || image.height;
+  const imageRatio = sourceWidth / sourceHeight;
   const frameRatio = width / height;
   let targetWidth = width;
   let targetHeight = height;
@@ -858,54 +1260,13 @@ async function getArchiveRecords() {
   });
 }
 
-async function saveWebsiteArchiveRecord(record) {
-  const response = await fetch(new URL("/api/archive", window.location.origin), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: record.id,
-      timestamp: record.timestamp,
-      image: record.finalImage,
-      selectedFilter: record.selectedFilter,
-      selectedPaper: record.selectedPaper,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Website archive save failed");
-  }
-
-  return response.json();
-}
-
-async function getWebsiteArchiveRecords() {
-  const response = await fetch(new URL("/api/archive", window.location.origin), {
-    method: "GET",
-    headers: { "Accept": "application/json" },
-  });
-
-  if (!response.ok) {
-    throw new Error("Website archive is unavailable");
-  }
-
-  const payload = await response.json();
-  return (payload.records || []).map((record) => ({
-    id: record.id,
-    timestamp: record.timestamp,
-    selectedFilter: record.selectedFilter,
-    selectedPaper: record.selectedPaper,
-    finalImage: new URL(record.imageUrl, window.location.origin).href,
-    archiveSource: "website",
-  }));
-}
-
 async function updateSessionRecord(updates) {
   if (!activeSessionRecord) return;
   activeSessionRecord = { ...activeSessionRecord, ...updates };
   try {
     await saveSessionRecord(activeSessionRecord);
   } catch (error) {
-    console.warn("MARVELL 20 archive update failed", error);
+    console.warn("MARVELL20 archive update failed", error);
   }
 }
 
@@ -939,7 +1300,7 @@ function renderArchive() {
   }
 
   const selectedRecord = archiveRecords.find((record) => record.id === selectedArchiveId) || archiveRecords[0];
-  archivePreviewImage.src = selectedRecord.finalImage;
+  archivePreviewImage.src = getRecordImageUrl(selectedRecord);
 
   archiveRecords.forEach((record) => {
     const button = document.createElement("button");
@@ -949,7 +1310,7 @@ function renderArchive() {
     button.classList.toggle("is-active", record.id === selectedRecord.id);
     button.setAttribute("aria-label", `Archived portrait ${time}`);
     button.innerHTML = `
-      <img src="${record.finalImage}" alt="" />
+      <img src="${getRecordImageUrl(record)}" alt="" />
       <span>${time}</span>
     `;
     button.addEventListener("click", () => {
@@ -967,13 +1328,6 @@ async function showArchive() {
   const recordsById = new Map();
 
   try {
-    const websiteRecords = await getWebsiteArchiveRecords();
-    websiteRecords.forEach((record) => recordsById.set(record.id, record));
-  } catch (error) {
-    console.warn("MARVELL 20 website archive load failed", error);
-  }
-
-  try {
     const browserRecords = await getArchiveRecords();
     browserRecords.forEach((record) => {
       if (!recordsById.has(record.id)) {
@@ -981,7 +1335,7 @@ async function showArchive() {
       }
     });
   } catch (error) {
-    console.warn("MARVELL 20 browser archive load failed", error);
+    console.warn("MARVELL20 browser archive load failed", error);
   }
 
   archiveRecords = Array.from(recordsById.values()).sort((left, right) => {
@@ -993,30 +1347,27 @@ async function showArchive() {
 async function prepareFinalSession() {
   if (activeSessionRecord) return activeSessionRecord;
 
-  await renderComposition(finalCanvas, portraitSize);
+  const outputSize = getOutputSize();
+  await renderComposition(finalCanvas, outputSize);
   const finalImage = finalCanvas.toDataURL("image/png");
   state.sessionId = state.sessionId || createSessionId();
   activeSessionRecord = {
     id: state.sessionId,
     timestamp: new Date().toISOString(),
     finalImage,
+    selectedFormat: state.selectedFormat,
     selectedFilter: state.selectedTone,
     selectedPaper: state.selectedPaper,
     exportStatus: "ready",
-    printStatus: "not_requested",
   };
 
   try {
     await saveSessionRecord(activeSessionRecord);
   } catch (error) {
-    console.warn("MARVELL 20 archive save failed", error);
+    console.warn("MARVELL20 archive save failed", error);
   }
 
-  try {
-    await saveWebsiteArchiveRecord(activeSessionRecord);
-  } catch (error) {
-    console.warn("MARVELL 20 website archive save failed", error);
-  }
+  await ensureCloudinaryImage(activeSessionRecord);
 
   return activeSessionRecord;
 }
@@ -1286,54 +1637,6 @@ function drawSessionQrCode(canvas, payload) {
   canvas.dataset.payload = payload;
 }
 
-async function createPortraitDownload(record) {
-  const response = await fetch(new URL("/api/portraits", window.location.origin), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: record.id,
-      image: record.finalImage,
-    }),
-  });
-
-  let result = {};
-  try {
-    result = await response.json();
-  } catch (error) {
-    result = {};
-  }
-
-  if (!response.ok || !result.downloadUrl) {
-    throw new Error(result.error || "Portrait download page could not be created");
-  }
-
-  return result;
-}
-
-async function sendPortraitToPrinter(record, imageDataUrl) {
-  const response = await fetch(new URL("/api/print", window.location.origin), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: record.id,
-      image: imageDataUrl,
-    }),
-  });
-
-  let result = {};
-  try {
-    result = await response.json();
-  } catch (error) {
-    result = {};
-  }
-
-  if (!response.ok || !result.ok) {
-    throw new Error(result.error || "Portrait could not be sent to the printer");
-  }
-
-  return result;
-}
-
 function beginRetake(index = state.selectedIndex) {
   if (!state.captures.length) return;
   state.retakeIndex = index;
@@ -1342,16 +1645,19 @@ function beginRetake(index = state.selectedIndex) {
 
 async function showFinal() {
   if (!state.selectedPaper) return;
+  qrCanvas.hidden = true;
+  qrStatus.textContent = "Preparing Cloudinary link...";
   await prepareFinalSession();
   setView("final");
+  prepareFinalPreviewLoop();
 }
 
 async function showToneStep() {
   toneNextButton.disabled = true;
 
   try {
-    const image = await preloadSelectedCaptureImage();
-    await renderToneControls(image);
+    const images = await preloadCaptureImages();
+    await renderToneControls(images);
     setView("tone");
   } finally {
     toneNextButton.disabled = false;
@@ -1363,22 +1669,15 @@ async function showPaperStep() {
   paperNextButton.disabled = true;
 
   try {
-    const image = await preloadSelectedCaptureImage();
-    await renderPaperControls(image);
+    const images = await preloadCaptureImages();
+    await renderPaperControls(images);
     setView("paper");
   } finally {
     paperNextButton.disabled = false;
   }
 }
 
-function isLocalQrExportEnabled() {
-  const params = new URLSearchParams(window.location.search);
-  const hostname = window.location.hostname;
-  const isPublicPagesApp = hostname.endsWith("github.io");
-  return params.get("qr") === "local" && !isPublicPagesApp;
-}
-
-function createPortraitFileName(record, extension = "jpg") {
+function createPortraitFileName(record, extension = "png") {
   const id = (record?.id || state.sessionId || Date.now().toString())
     .replace(/[^a-z0-9-]/gi, "-")
     .replace(/-+/g, "-")
@@ -1386,19 +1685,94 @@ function createPortraitFileName(record, extension = "jpg") {
   return `${id || Date.now()}.${extension}`;
 }
 
-function createCloudinaryPublicId(record) {
-  const sourceId = record?.id || state.sessionId || createSessionId();
-  const sessionMatch = String(sourceId).match(/^M20-(\d{14})-([A-Z0-9]+)$/i);
-  if (sessionMatch) {
-    return `m20-${sessionMatch[1].slice(6)}-${sessionMatch[2].toLowerCase()}`;
+function getRecordImageUrl(record) {
+  return record?.cloudinaryUrl || record?.finalImage || "";
+}
+
+function getCloudinaryPublicId(record, extension) {
+  const base = createPortraitFileName(record, extension).replace(/\.[^.]+$/, "");
+  return extension === "gif" ? `${base}-gif` : base;
+}
+
+function getCloudinaryDeliveryUrl(upload, extension) {
+  const resourceType = upload.resource_type || "image";
+  const format = upload.format || extension;
+  const publicId = upload.public_id || "";
+  return `https://res.cloudinary.com/${cloudinaryCloudName}/${resourceType}/upload/${publicId}.${format}`;
+}
+
+async function uploadToCloudinary(blob, record, extension = "png") {
+  const endpoint = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/auto/upload`;
+  const formData = new FormData();
+  formData.append("upload_preset", cloudinaryUploadPreset);
+  formData.append("folder", cloudinaryUploadFolder);
+  formData.append("public_id", getCloudinaryPublicId(record, extension));
+  formData.append("tags", ["MARVELL20", record.selectedFormat, record.selectedFilter, record.selectedPaper].filter(Boolean).join(","));
+  formData.append("file", blob, createPortraitFileName(record, extension));
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Cloudinary upload failed with ${response.status}`);
   }
 
-  return sourceId
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 20);
+  return response.json();
+}
+
+async function ensureCloudinaryImage(record) {
+  if (record.cloudinaryUrl) return record;
+
+  const finalBlob = await canvasToBlob(finalCanvas, "image/png");
+  try {
+    const upload = await uploadToCloudinary(finalBlob, record, "png");
+    activeSessionRecord = {
+      ...record,
+      cloudinaryUrl: getCloudinaryDeliveryUrl(upload, "png"),
+      cloudinaryPublicId: upload.public_id,
+      cloudinaryAssetId: upload.asset_id,
+      cloudinaryResourceType: upload.resource_type,
+      exportStatus: "cloudinary_ready",
+    };
+    await saveSessionRecord(activeSessionRecord);
+    return activeSessionRecord;
+  } catch (error) {
+    console.warn("MARVELL20 Cloudinary upload failed", error);
+    qrCanvas.hidden = true;
+    qrStatus.textContent = "Cloudinary upload failed. Try again.";
+    activeSessionRecord = {
+      ...record,
+      exportStatus: "cloudinary_failed",
+    };
+    await saveSessionRecord(activeSessionRecord).catch(() => {});
+    return activeSessionRecord;
+  }
+}
+
+function showCloudinaryQr(record, type = "photo") {
+  const url = type === "gif" ? record.gifCloudinaryUrl : record.cloudinaryUrl;
+  if (!url) {
+    qrCanvas.hidden = true;
+    qrStatus.textContent = record.exportStatus === "cloudinary_failed"
+      ? "Cloudinary upload failed. Try again."
+      : "Cloudinary link unavailable.";
+    setView("scan");
+    return;
+  }
+
+  try {
+    drawSessionQrCode(qrCanvas, url);
+    qrCanvas.hidden = false;
+    qrStatus.textContent = type === "gif" ? "Scan for GIF" : "Scan to save";
+    setView("scan");
+  } catch (error) {
+    console.warn("MARVELL20 QR render failed", error);
+    qrCanvas.hidden = true;
+    qrStatus.textContent = "Cloudinary QR unavailable. Try again.";
+    setView("scan");
+  }
 }
 
 function canvasToBlob(canvas, type = "image/jpeg", quality = 0.92) {
@@ -1418,146 +1792,367 @@ function canvasToBlob(canvas, type = "image/jpeg", quality = 0.92) {
   });
 }
 
-async function createFinalPortraitJpegBlob() {
-  await renderComposition(finalCanvas, portraitSize);
-  return canvasToBlob(finalCanvas, "image/jpeg", 0.92);
-}
-
-function createCloudinaryUploadForm(blob, record, includePublicId = true) {
-  const form = new FormData();
-  form.append("file", blob, createPortraitFileName(record, "jpg"));
-  form.append("upload_preset", cloudinaryUploadPreset);
-  if (includePublicId) {
-    form.append("public_id", createCloudinaryPublicId(record));
-  }
-  return form;
-}
-
-async function postCloudinaryUpload(form) {
-  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/image/upload`, {
-    method: "POST",
-    body: form,
-  });
-
-  let payload = {};
-  try {
-    payload = await response.json();
-  } catch (error) {
-    payload = {};
-  }
-
-  if (!response.ok || !payload.secure_url) {
-    throw new Error("Portrait upload failed");
-  }
-
-  return payload.secure_url;
-}
-
-async function uploadPortraitToCloudinary(record) {
-  const blob = await createFinalPortraitJpegBlob();
-
-  try {
-    return await postCloudinaryUpload(createCloudinaryUploadForm(blob, record, true));
-  } catch (error) {
-    console.warn("MARVELL 20 Cloudinary named upload failed", error);
-    return postCloudinaryUpload(createCloudinaryUploadForm(blob, record, false));
-  }
-}
-
 function setExportBusy(isBusy) {
   exportButton.disabled = isBusy;
+  gifButton.disabled = isBusy;
   finalNextButton.disabled = isBusy || !state.selectedPaper;
-  doneButton.disabled = isBusy;
 }
 
-async function showCloudinaryExport() {
+async function showPhotoQr() {
   const record = await prepareFinalSession();
-  setView("qr");
-  qrCanvas.hidden = true;
-  qrStatus.textContent = "Preparing portrait...";
   setExportBusy(true);
+  exportButton.textContent = "Preparing...";
 
   try {
-    activeExportDownloadUrl = activeExportDownloadUrl || await uploadPortraitToCloudinary(record);
-    drawSessionQrCode(qrCanvas, activeExportDownloadUrl);
-    qrCanvas.hidden = false;
-    qrStatus.textContent = exportReadyText;
-    await updateSessionRecord({
-      exportStatus: "cloudinary_ready",
-      exportUrl: activeExportDownloadUrl,
-    });
+    const uploadedRecord = await ensureCloudinaryImage(record);
+    showCloudinaryQr(uploadedRecord, "photo");
+    await updateSessionRecord({ exportStatus: "scanned_png" });
   } catch (error) {
-    console.warn("MARVELL 20 Cloudinary export failed", error);
-    qrStatus.textContent = "Portrait could not be prepared. Please ask the operator.";
-    await updateSessionRecord({ exportStatus: "cloudinary_failed" });
+    console.warn("MARVELL20 Cloudinary scan failed", error);
+    exportButton.textContent = "Try Again";
   } finally {
+    window.setTimeout(() => {
+      exportButton.textContent = state.selectedFormat === "single" ? "Scan Photo" : "Scan Strip";
+    }, 1400);
     setExportBusy(false);
   }
 }
 
-async function showLocalQrExport() {
-  const record = await prepareFinalSession();
-  setView("qr");
-  qrCanvas.hidden = true;
-  qrStatus.textContent = "Preparing QR...";
-  setExportBusy(true);
+function drawGifFrame(canvas, image, tone) {
+  const context = canvas.getContext("2d");
+  canvas.width = gifFrameSize.width;
+  canvas.height = gifFrameSize.height;
+  context.fillStyle = "#211b18";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  drawTonedImage(context, image, tone, { x: 0, y: 0, width: canvas.width, height: canvas.height });
+}
+
+function createGifSegment(blob, startFraction = 0, durationFraction = 1) {
+  return { blob, startFraction, durationFraction };
+}
+
+function createGifSegments(blob, count) {
+  return Array.from({ length: count }, (_, index) => {
+    return createGifSegment(blob, index / count, 1 / count);
+  });
+}
+
+function hasGifVideoSegments() {
+  const count = getCaptureCount();
+  return state.selectedFormat === "strip"
+    && state.videoSegments.length >= count
+    && state.videoSegments.slice(0, count).some((segment) => segment?.blob);
+}
+
+async function createStripGifBlob() {
+  if (state.selectedFormat === "single") {
+    return createSingleGifBlob();
+  }
 
   try {
-    const exportInfo = await createPortraitDownload(record);
-    activeExportDownloadUrl = exportInfo.downloadUrl;
-    drawSessionQrCode(qrCanvas, activeExportDownloadUrl);
-    qrCanvas.hidden = false;
-    qrStatus.textContent = exportReadyText;
-    await updateSessionRecord({
-      exportStatus: "qr_ready",
-      exportUrl: activeExportDownloadUrl,
-      exportToken: exportInfo.token,
-    });
+    if (hasGifVideoSegments()) {
+      return await createSegmentedVideoPaperGifBlob(state.videoSegments);
+    }
+
+    if (state.videoClipBlob) {
+      return await createSegmentedVideoPaperGifBlob(createGifSegments(state.videoClipBlob, getCaptureCount()));
+    }
   } catch (error) {
-    console.warn("MARVELL 20 QR export failed", error);
-    qrStatus.textContent = "Portrait could not be prepared. Please ask the operator.";
-    await updateSessionRecord({ exportStatus: "qr_failed" });
+    console.warn("MARVELL20 video GIF fallback used", error);
+  }
+
+  return createStillStripGifBlob();
+}
+
+async function createSingleGifBlob() {
+  try {
+    const segment = state.videoSegments[0]?.blob
+      ? state.videoSegments[0]
+      : state.videoClipBlob
+        ? createGifSegment(state.videoClipBlob)
+        : null;
+
+    if (segment?.blob) {
+      return await createSingleVideoPaperGifBlob(segment);
+    }
+  } catch (error) {
+    console.warn("MARVELL20 single video GIF fallback used", error);
+  }
+
+  return createStillSingleGifBlob();
+}
+
+async function createStillSingleGifBlob() {
+  const gifenc = await loadGifEncoder();
+  const { GIFEncoder, applyPalette, quantize } = gifenc;
+  const images = await preloadCaptureImages();
+  const canvas = document.createElement("canvas");
+  const gif = GIFEncoder();
+
+  canvas.width = singleGifPaperSize.width;
+  canvas.height = singleGifPaperSize.height;
+  await renderComposition(canvas, { width: canvas.width, height: canvas.height, images });
+  const frame = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+  const palette = quantize(frame, 256);
+  const indexed = applyPalette(frame, palette);
+  gif.writeFrame(indexed, canvas.width, canvas.height, { palette, delay: 1500 });
+  gif.writeFrame(indexed, canvas.width, canvas.height, { palette, delay: 1500 });
+  gif.finish();
+  return new Blob([gif.bytes()], { type: "image/gif" });
+}
+
+async function createStillStripGifBlob() {
+  const gifenc = await loadGifEncoder();
+  const { GIFEncoder, applyPalette, quantize } = gifenc;
+  const images = await preloadCaptureImages();
+  const canvas = document.createElement("canvas");
+  const gif = GIFEncoder();
+
+  canvas.width = gifPaperSize.width;
+  canvas.height = gifPaperSize.height;
+  await renderComposition(canvas, { width: canvas.width, height: canvas.height, images });
+  const frame = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+  const palette = quantize(frame, 256);
+  const indexed = applyPalette(frame, palette);
+  gif.writeFrame(indexed, canvas.width, canvas.height, { palette, delay: 1500 });
+  gif.writeFrame(indexed, canvas.width, canvas.height, { palette, delay: 1500 });
+
+  gif.finish();
+  return new Blob([gif.bytes()], { type: "image/gif" });
+}
+
+function waitForVideoEvent(video, eventName) {
+  return new Promise((resolve, reject) => {
+    const handleEvent = () => {
+      cleanup();
+      resolve();
+    };
+    const handleError = () => {
+      cleanup();
+      reject(video.error || new Error(`Video ${eventName} failed`));
+    };
+    const cleanup = () => {
+      video.removeEventListener(eventName, handleEvent);
+      video.removeEventListener("error", handleError);
+    };
+    video.addEventListener(eventName, handleEvent, { once: true });
+    video.addEventListener("error", handleError, { once: true });
+  });
+}
+
+async function seekVideo(video, time) {
+  if (Math.abs(video.currentTime - time) < 0.04) return;
+  const seeked = waitForVideoEvent(video, "seeked");
+  video.currentTime = time;
+  await seeked;
+}
+
+async function createSegmentedVideoPaperGifBlob(segments) {
+  const gifenc = await loadGifEncoder();
+  const { GIFEncoder, applyPalette, quantize } = gifenc;
+  const tone = getTone();
+  const paper = getPaper();
+  const images = await preloadCaptureImages();
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  const urls = [];
+  const sources = [];
+  const gif = GIFEncoder();
+
+  canvas.width = gifPaperSize.width;
+  canvas.height = gifPaperSize.height;
+
+  try {
+    const count = getCaptureCount();
+    for (let index = 0; index < count; index += 1) {
+      const segment = segments[index];
+      if (!segment?.blob) {
+        sources[index] = { image: images[index], duration: 0.65 };
+        continue;
+      }
+
+      const video = document.createElement("video");
+      const url = URL.createObjectURL(segment.blob);
+      urls.push(url);
+      video.src = url;
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = "auto";
+      await waitForVideoEvent(video, "loadedmetadata");
+
+      const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 3.5;
+      const startTime = duration * (segment.startFraction ?? 0);
+      const segmentDuration = Math.max(0.65, duration * (segment.durationFraction ?? 1));
+      const endTime = Math.max(startTime, Math.min(duration - 0.05, startTime + segmentDuration));
+      sources[index] = {
+        video,
+        startTime,
+        endTime,
+        duration: Math.max(0.65, endTime - startTime),
+      };
+    }
+
+    const loopDuration = Math.max(0.9, ...sources.map((source) => source.duration || 0.65));
+    const frameDelay = 250;
+    const frameCount = 12;
+
+    for (let index = 0; index < frameCount; index += 1) {
+      const localTime = Math.min(loopDuration - 0.05, (loopDuration * index) / frameCount);
+      await drawVideoStripComposition(context, sources, tone, paper, canvas.width, canvas.height, Math.max(0, localTime));
+      const frame = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      const palette = quantize(frame, 256);
+      const indexed = applyPalette(frame, palette);
+      gif.writeFrame(indexed, canvas.width, canvas.height, { palette, delay: frameDelay });
+    }
+
+    gif.finish();
+    return new Blob([gif.bytes()], { type: "image/gif" });
   } finally {
-    setExportBusy(false);
+    urls.forEach((url) => URL.revokeObjectURL(url));
   }
 }
 
-async function showExport() {
-  if (isLocalQrExportEnabled()) {
-    await showLocalQrExport();
+async function createSingleVideoPaperGifBlob(segment) {
+  const gifenc = await loadGifEncoder();
+  const { GIFEncoder, applyPalette, quantize } = gifenc;
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  const video = document.createElement("video");
+  const url = URL.createObjectURL(segment.blob);
+  const gif = GIFEncoder();
+
+  canvas.width = singleGifPaperSize.width;
+  canvas.height = singleGifPaperSize.height;
+  video.src = url;
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = "auto";
+
+  try {
+    await waitForVideoEvent(video, "loadedmetadata");
+    const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 3;
+    const startTime = duration * (segment.startFraction ?? 0);
+    const segmentDuration = Math.max(0.9, duration * (segment.durationFraction ?? 1));
+    const endTime = Math.max(startTime, Math.min(duration - 0.05, startTime + segmentDuration));
+    const loopDuration = Math.max(0.9, endTime - startTime);
+    const frameDelay = 250;
+    const frameCount = 12;
+    const tone = getTone();
+    const paper = getPaper();
+
+    for (let index = 0; index < frameCount; index += 1) {
+      const localTime = Math.min(loopDuration - 0.05, (loopDuration * index) / frameCount);
+      await seekVideo(video, Math.max(startTime, Math.min(endTime, startTime + localTime)));
+      drawSingleComposition(context, video, tone, paper, canvas.width, canvas.height, false);
+      const frame = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      const palette = quantize(frame, 256);
+      const indexed = applyPalette(frame, palette);
+      gif.writeFrame(indexed, canvas.width, canvas.height, { palette, delay: frameDelay });
+    }
+
+    gif.finish();
+    return new Blob([gif.bytes()], { type: "image/gif" });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function loadGifEncoder() {
+  if (window.gifenc?.GIFEncoder) {
+    return window.gifenc;
+  }
+
+  gifEncoderModulePromise ||= import("./vendor/gifenc.esm.js").then((module) => {
+    return module.default || module;
+  });
+
+  return gifEncoderModulePromise;
+}
+
+function stopFinalPreviewLoop() {
+  window.clearTimeout(state.finalPreviewTimer);
+  state.finalPreviewTimer = 0;
+  state.finalPreviewToken += 1;
+  finalFocus.classList.remove("is-showing-gif");
+  finalGifPreview.hidden = true;
+  finalGifPreview.removeAttribute("src");
+  state.finalPreviewGifBlob = null;
+
+  if (state.finalPreviewGifUrl) {
+    URL.revokeObjectURL(state.finalPreviewGifUrl);
+    state.finalPreviewGifUrl = "";
+  }
+}
+
+function scheduleFinalPreviewLoop(showGif = false) {
+  window.clearTimeout(state.finalPreviewTimer);
+  if (!state.finalPreviewGifBlob || appShell.dataset.view !== "final") return;
+
+  if (showGif) {
+    if (state.finalPreviewGifUrl) URL.revokeObjectURL(state.finalPreviewGifUrl);
+    state.finalPreviewGifUrl = URL.createObjectURL(state.finalPreviewGifBlob);
+    let didReveal = false;
+    const revealGif = () => {
+      if (didReveal || appShell.dataset.view !== "final") return;
+      didReveal = true;
+      finalFocus.classList.add("is-showing-gif");
+      state.finalPreviewTimer = window.setTimeout(() => {
+        scheduleFinalPreviewLoop(false);
+      }, 3000);
+    };
+
+    finalGifPreview.onload = revealGif;
+    finalGifPreview.removeAttribute("src");
+    finalGifPreview.src = state.finalPreviewGifUrl;
+    window.setTimeout(revealGif, 120);
     return;
   }
 
-  await showCloudinaryExport();
+  finalFocus.classList.remove("is-showing-gif");
+  state.finalPreviewTimer = window.setTimeout(() => {
+    scheduleFinalPreviewLoop(true);
+  }, 3000);
 }
 
-function showPaymentScreen() {
-  setView("payment");
-  updateSessionRecord({ printStatus: "payment_requested" }).catch(() => {});
-}
+async function prepareFinalPreviewLoop() {
+  stopFinalPreviewLoop();
+  finalFocus.classList.remove("is-showing-gif");
 
-async function preparePrintHandoff() {
-  const canvas = document.createElement("canvas");
-  await renderComposition(canvas, printSize);
-  activePrintDataUrl = canvas.toDataURL("image/jpeg", 0.92);
-}
-
-async function confirmPaymentAndShowPrintHandoff() {
-  paymentConfirmedButton.disabled = true;
-  paymentBackButton.disabled = true;
+  const token = state.finalPreviewToken;
   try {
-    const record = await prepareFinalSession();
-    await preparePrintHandoff();
-    await sendPortraitToPrinter(record, activePrintDataUrl);
-    await updateSessionRecord({ printStatus: "sent_to_printer" });
-    setView("print");
+    const blob = await createStripGifBlob();
+    if (token !== state.finalPreviewToken || appShell.dataset.view !== "final") return;
+
+    state.finalPreviewGifBlob = blob;
+    finalGifPreview.hidden = false;
+    scheduleFinalPreviewLoop(false);
   } catch (error) {
-    console.warn("MARVELL 20 print handoff failed", error);
-    await updateSessionRecord({ printStatus: "print_failed" }).catch(() => {});
-    setView("print");
+    console.warn("MARVELL20 final GIF preview failed", error);
+  }
+}
+
+async function showGifQr() {
+  const record = await prepareFinalSession();
+  setExportBusy(true);
+  gifButton.textContent = "Preparing...";
+
+  try {
+    const blob = state.finalPreviewGifBlob || await createStripGifBlob();
+    const upload = await uploadToCloudinary(blob, record, "gif");
+    await updateSessionRecord({
+      gifCloudinaryUrl: getCloudinaryDeliveryUrl(upload, "gif"),
+      gifCloudinaryPublicId: upload.public_id,
+      exportStatus: "scanned_gif",
+    });
+    showCloudinaryQr(activeSessionRecord, "gif");
+  } catch (error) {
+    console.warn("MARVELL20 GIF export failed", error);
+    gifButton.textContent = "Try Again";
+    window.setTimeout(() => {
+      gifButton.textContent = "Scan GIF";
+    }, 1400);
   } finally {
-    paymentConfirmedButton.disabled = false;
-    paymentBackButton.disabled = false;
+    setExportBusy(false);
   }
 }
 
@@ -1581,22 +2176,30 @@ function resetInactivityTimer() {
 
 function refreshRenderedPreviews() {
   renderAll().catch((error) => {
-    console.warn("MARVELL 20 preview render failed", error);
+    console.warn("MARVELL20 preview render failed", error);
   });
 }
-
-paperPattern.addEventListener("load", refreshRenderedPreviews);
-paperPatternArchive.addEventListener("load", refreshRenderedPreviews);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=flow-4").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-33").catch(() => {});
   });
 }
 
-beginButton.addEventListener("click", beginSession);
+beginButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  beginSession();
+});
+homeView.addEventListener("pointerup", (event) => {
+  if (event.target.closest("button")) return;
+  beginSession();
+});
 archiveButton.addEventListener("click", showArchive);
+formatButtons.forEach((button) => {
+  button.addEventListener("click", () => chooseFormat(button.dataset.formatChoice));
+});
 sourceButton.addEventListener("click", openCameraDialog);
+changeCameraButton.hidden = true;
 changeCameraButton.addEventListener("click", openCameraDialog);
 applyCameraButton.addEventListener("click", () => startCamera(cameraSelect.value));
 captureButton.addEventListener("click", captureFlow);
@@ -1604,14 +2207,14 @@ retakeButton.addEventListener("click", () => beginRetake());
 toneNextButton.addEventListener("click", showToneStep);
 paperNextButton.addEventListener("click", showPaperStep);
 finalNextButton.addEventListener("click", showFinal);
-exportButton.addEventListener("click", showExport);
-printButton.addEventListener("click", showPaymentScreen);
+exportButton.addEventListener("click", showPhotoQr);
+gifButton.addEventListener("click", showGifQr);
 startAgainButton.addEventListener("click", startAgain);
-paymentConfirmedButton.addEventListener("click", confirmPaymentAndShowPrintHandoff);
-paymentBackButton.addEventListener("click", () => setView("final"));
-doneButton.addEventListener("click", startAgain);
-printDoneButton.addEventListener("click", startAgain);
-printStartAgainButton.addEventListener("click", startAgain);
+scanBackButton.addEventListener("click", () => {
+  setView("final");
+  prepareFinalPreviewLoop();
+});
+scanStartAgainButton.addEventListener("click", startAgain);
 archiveRefreshButton.addEventListener("click", showArchive);
 archiveBackButton.addEventListener("click", startAgain);
 
@@ -1630,4 +2233,22 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+appShell.addEventListener("pointerup", (event) => {
+  if (appShell.dataset.view !== "camera") return;
+  if (event.target.closest("button, select, dialog")) return;
+
+  window.clearTimeout(cameraTapTimer);
+  cameraTapCount += 1;
+  cameraTapTimer = window.setTimeout(() => {
+    cameraTapCount = 0;
+  }, 900);
+
+  if (cameraTapCount >= 3) {
+    cameraTapCount = 0;
+    window.clearTimeout(cameraTapTimer);
+    cycleCamera().catch((error) => console.warn("MARVELL20 camera switch failed", error));
+  }
+});
+
+drawFormatSamples();
 refreshRenderedPreviews();

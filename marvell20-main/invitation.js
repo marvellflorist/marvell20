@@ -29,6 +29,7 @@ const calendarButton = document.querySelector("#calendarButton");
 const websiteLink = document.querySelector("#websiteLink");
 const instagramLink = document.querySelector("#instagramLink");
 const countdownTitle = document.querySelector("#countdown-title");
+const countdownElement = document.querySelector(".countdown");
 const languageButtons = document.querySelectorAll("[data-lang]");
 const translatedElements = document.querySelectorAll("[data-en][data-id]");
 const days = document.querySelector("#days");
@@ -39,13 +40,15 @@ const countdownDigits = [days, hours, minutes, seconds];
 const LANGUAGE_LABELS = {
   en: {
     saveDate: "Save the date",
-    open: "We are open",
+    closing: "Until closing",
+    ended: "Thank you for joining us",
     soundOn: "Pause sound",
     soundOff: "Play sound",
   },
   id: {
     saveDate: "Catat tanggalnya",
-    open: "Sedang berlangsung",
+    closing: "Menuju penutupan",
+    ended: "Terima kasih sudah hadir",
     soundOn: "Matikan suara",
     soundOff: "Putar suara",
   },
@@ -267,14 +270,27 @@ function setAnimatedNumber(element, value) {
 
 function updateCountdown() {
   const now = Date.now();
-  const target = new Date(EVENT_SETTINGS.eventDate).getTime();
+  const launch = new Date(EVENT_SETTINGS.eventDate).getTime();
   const end = new Date(EVENT_SETTINGS.eventEnd).getTime();
-  const isLive = now >= target && now <= end;
+  const labels = LANGUAGE_LABELS[activeLanguage];
+  const isBeforeLaunch = now < launch;
+  const isBeforeClose = now <= end;
+  const target = isBeforeLaunch ? launch : end;
   const remaining = Math.max(0, target - now);
   const totalSeconds = Math.floor(remaining / 1000);
 
-  const labels = LANGUAGE_LABELS[activeLanguage];
-  countdownTitle.textContent = isLive ? labels.open : labels.saveDate;
+  countdownTitle.textContent = isBeforeLaunch ? labels.saveDate : labels.closing;
+  if (!isBeforeClose) {
+    countdownTitle.textContent = labels.ended;
+  }
+  countdownElement?.setAttribute(
+    "aria-label",
+    isBeforeLaunch
+      ? "Countdown to MARVELL20 launch"
+      : isBeforeClose
+        ? "Countdown until MARVELL20 closes on 4 July 2026 at 18.00"
+        : "MARVELL20 countdown complete"
+  );
   setAnimatedNumber(days, Math.floor(totalSeconds / 86400));
   setAnimatedNumber(hours, Math.floor((totalSeconds % 86400) / 3600));
   setAnimatedNumber(minutes, Math.floor((totalSeconds % 3600) / 60));

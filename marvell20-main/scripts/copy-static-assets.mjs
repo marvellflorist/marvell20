@@ -14,12 +14,15 @@ const files = [
   "Inter-VariableFont_opsz,wght.ttf",
   "Inter-Italic-VariableFont_opsz,wght.ttf",
   "Relationship of mélodrame.ttf",
-  "background.webp",
-  "pattern.webp",
-  "pattern2.webp",
+  "background.png",
+  "burgundy.png",
+  "singleblack.png",
+  "singlegarden.webp",
+  "stripburgundy.jpeg",
+  "stripblack.png",
+  "stripgarden.png",
   "envelope.webp",
   "whattoexpect.webp",
-  "qris-code.webp",
   "lily.mp4",
   "JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.mp3",
   "JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.ogg",
@@ -29,6 +32,8 @@ const files = [
 
 await mkdir(dist, { recursive: true });
 await mkdir(join(dist, "icons"), { recursive: true });
+await mkdir(join(dist, "vendor"), { recursive: true });
 
 await Promise.all(files.map((file) => copyFile(join(projectRoot, file), join(dist, file))));
 await cp(join(projectRoot, "icons"), join(dist, "icons"), { recursive: true });
+await cp(join(projectRoot, "vendor"), join(dist, "vendor"), { recursive: true });
