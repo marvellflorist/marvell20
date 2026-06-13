@@ -2182,7 +2182,7 @@ function refreshRenderedPreviews() {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=photobooth-33").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-34").catch(() => {});
   });
 }
 

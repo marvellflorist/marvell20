@@ -1,5 +1,11 @@
-const CACHE_NAME = "marvell-20-v84";
+const CACHE_NAME = "marvell-20-v85";
 const APP_SHELL = [
+  "./index.html",
+  "./photobooth.html",
+  "./app.js",
+  "./styles.css",
+  "./invitation.css",
+  "./invitation.js",
   "./manifest.json",
   "./icons/marvell-logo-favicon.svg",
   "./icons/apple-touch-icon.png",
@@ -25,7 +31,15 @@ const APP_SHELL = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then((cache) => {
+      return Promise.allSettled(APP_SHELL.map((asset) => cache.add(asset))).then((results) => {
+        results.forEach((result, index) => {
+          if (result.status === "rejected") {
+            console.warn(`[service-worker] Skipping uncached optional asset: ${APP_SHELL[index]}`);
+          }
+        });
+      });
+    })
   );
   self.skipWaiting();
 });
@@ -70,7 +84,7 @@ self.addEventListener("fetch", (event) => {
       return response;
     }).catch(() => {
       if (shouldFetchFresh) {
-        return caches.match(event.request).then((cached) => cached || caches.match("./index.html"));
+        return caches.match(event.request).then((cached) => cached || caches.match("./photobooth.html") || caches.match("./index.html"));
       }
 
       return caches.match(event.request).then((cached) => {
@@ -81,7 +95,7 @@ self.addEventListener("fetch", (event) => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           return response;
-        }).catch(() => caches.match("./index.html"));
+        }).catch(() => caches.match("./photobooth.html") || caches.match("./index.html"));
       });
     })
   );

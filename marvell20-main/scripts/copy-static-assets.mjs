@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { copyFile, cp, mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -34,6 +35,26 @@ await mkdir(dist, { recursive: true });
 await mkdir(join(dist, "icons"), { recursive: true });
 await mkdir(join(dist, "vendor"), { recursive: true });
 
-await Promise.all(files.map((file) => copyFile(join(projectRoot, file), join(dist, file))));
-await cp(join(projectRoot, "icons"), join(dist, "icons"), { recursive: true });
-await cp(join(projectRoot, "vendor"), join(dist, "vendor"), { recursive: true });
+async function copyIfExists(source, destination, label = source) {
+  if (!existsSync(source)) {
+    console.warn(`[copy-static-assets] Skipping missing optional asset: ${label}`);
+    return;
+  }
+
+  await copyFile(source, destination);
+}
+
+async function copyDirIfExists(source, destination, label = source) {
+  if (!existsSync(source)) {
+    console.warn(`[copy-static-assets] Skipping missing optional directory: ${label}`);
+    return;
+  }
+
+  await cp(source, destination, { recursive: true });
+}
+
+await Promise.all(files.map((file) => {
+  return copyIfExists(join(projectRoot, file), join(dist, file), file);
+}));
+await copyDirIfExists(join(projectRoot, "icons"), join(dist, "icons"), "icons");
+await copyDirIfExists(join(projectRoot, "vendor"), join(dist, "vendor"), "vendor");

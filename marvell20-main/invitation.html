@@ -4,14 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#3D0B17" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MARVELL20" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta
       name="description"
       content="An editorial digital invitation to MARVELL 20 by Marvell Florist."
     />
     <title>MARVELL 20 Invitation</title>
+    <script>
+      if ((window.navigator.standalone || window.matchMedia("(display-mode: standalone)").matches) && !location.pathname.endsWith("/photobooth.html")) {
+        location.replace(new URL("photobooth.html", location.href));
+      }
+    </script>
     <link rel="preload" href="lily.mp4?v=20260606-loop" as="video" type="video/mp4" />
     <link rel="preload" href="footer.webp" as="image" />
+    <link rel="manifest" href="/marvell20/manifest.json" />
     <link rel="icon" href="icons/marvell-logo-favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/marvell20/icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="invitation.css" />
   </head>
   <body>
