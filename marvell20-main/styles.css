@@ -72,7 +72,7 @@ button {
   isolation: isolate;
   background:
     linear-gradient(rgba(255, 250, 240, 0.82), rgba(255, 250, 240, 0.88)),
-    url("background.png") center / cover no-repeat;
+    url("background.PNG") center / cover no-repeat;
 }
 
 .view {

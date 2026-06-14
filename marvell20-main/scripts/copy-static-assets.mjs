@@ -15,7 +15,7 @@ const files = [
   "Inter-VariableFont_opsz,wght.ttf",
   "Inter-Italic-VariableFont_opsz,wght.ttf",
   "Relationship of mélodrame.ttf",
-  "background.png",
+  "background.PNG",
   "burgundy.png",
   "singleblack.png",
   "singlegarden.webp",

@@ -1,4 +1,4 @@
-const CACHE_NAME = "marvell-20-v86";
+const CACHE_NAME = "marvell-20-v87";
 const APP_SHELL = [
   "./index.html",
   "./photobooth.html",
@@ -9,7 +9,7 @@ const APP_SHELL = [
   "./manifest.json",
   "./icons/marvell-logo-favicon.svg",
   "./icons/apple-touch-icon.png",
-  "./background.png",
+  "./background.PNG",
   "./burgundy.png",
   "./singleblack.png",
   "./singlegarden.webp",
