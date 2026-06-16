@@ -62,6 +62,8 @@ const finalImageQuality = 0.96;
 const gifFrameDelayMs = 90;
 const maxGifFrames = 24;
 const stripGifSegmentDuration = 5;
+const countdownVisibleMs = 820;
+const countdownHiddenMs = 180;
 const archiveStoreName = "sessions";
 const cloudinaryCloudName = "dz2ajhfsm";
 const cloudinaryUploadPreset = "marvell20_upload";
@@ -340,15 +342,30 @@ async function captureFlow() {
   const targetCount = state.retakeIndex === null ? getCaptureCount() : 1;
   const shouldRecordClip = true;
   if (shouldRecordClip && !isRetake) clearVideoClip();
-  const recording = shouldRecordClip ? startCameraRecording() : null;
 
   if (state.retakeIndex === null) {
     state.captures = [];
     state.selectedIndex = 0;
+    state.videoClipBlob = null;
+    state.videoSegments = Array.from({ length: targetCount }, () => null);
   }
 
   for (let index = 0; index < targetCount; index += 1) {
-    await runCountdown();
+    const slotIndex = isRetake ? retakeSlot : index;
+    const recording = shouldRecordClip ? startCameraRecording() : null;
+    let videoClip = null;
+
+    try {
+      await runCountdown();
+    } finally {
+      if (recording) {
+        videoClip = await stopCameraRecording(recording).catch((error) => {
+          console.warn("MARVELL20 clip recording stop failed", error);
+          return null;
+        });
+      }
+    }
+
     const capture = capturePortrait();
     if (state.retakeIndex === null) {
       state.captures.push(capture);
@@ -356,8 +373,12 @@ async function captureFlow() {
     } else {
       state.captures[retakeSlot] = capture;
       state.selectedIndex = retakeSlot;
-      state.videoSegments[retakeSlot] = null;
       state.retakeIndex = null;
+    }
+    if (videoClip?.size) {
+      state.videoSegments[slotIndex] = createGifSegment(videoClip, 0, 1, stripGifSegmentDuration);
+    } else {
+      state.videoSegments[slotIndex] = null;
     }
     invalidatePreviewCache();
     playShutterSound();
@@ -370,23 +391,9 @@ async function captureFlow() {
   state.selectedTone = "";
   state.selectedPaper = "";
   try {
-    if (recording) {
-      const videoClip = await stopCameraRecording(recording);
-      if (videoClip?.size) {
-        if (isRetake) {
-          state.videoSegments[retakeSlot] = createGifSegment(videoClip);
-        } else {
-          state.videoClipBlob = videoClip;
-          state.videoSegments = createGifSegments(videoClip, targetCount);
-        }
-      }
-    }
     await preloadSelectedCaptureImage();
     await renderAll();
   } finally {
-    if (recording && state.activeRecorder) {
-      await stopCameraRecording(recording).catch(() => {});
-    }
     setBusy(false);
   }
   setView("review");
@@ -527,9 +534,9 @@ async function runCountdown() {
   for (const beat of ["5", "4", "3", "2", "1"]) {
     countdown.textContent = beat;
     countdown.classList.add("is-visible");
-    await sleep(560);
+    await sleep(countdownVisibleMs);
     countdown.classList.remove("is-visible");
-    await sleep(150);
+    await sleep(countdownHiddenMs);
   }
 }
 
@@ -1942,8 +1949,8 @@ function drawGifFrame(canvas, image, tone) {
   drawTonedImage(context, image, tone, { x: 0, y: 0, width: canvas.width, height: canvas.height });
 }
 
-function createGifSegment(blob, startFraction = 0, durationFraction = 1) {
-  return { blob, startFraction, durationFraction };
+function createGifSegment(blob, startFraction = 0, durationFraction = 1, expectedDuration = 0) {
+  return { blob, startFraction, durationFraction, expectedDuration };
 }
 
 function createGifSegments(blob, count) {
@@ -2108,9 +2115,12 @@ async function createSegmentedVideoPaperGifBlob(segments) {
       video.preload = "auto";
       await waitForVideoEvent(video, "loadedmetadata");
 
-      const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 3.5;
+      const expectedDuration = segment.expectedDuration || 0;
+      const duration = Number.isFinite(video.duration) && video.duration > 0
+        ? video.duration
+        : expectedDuration || stripGifSegmentDuration;
       const startTime = duration * (segment.startFraction ?? 0);
-      const segmentDuration = Math.max(0.65, duration * (segment.durationFraction ?? 1));
+      const segmentDuration = Math.max(0.65, expectedDuration || duration * (segment.durationFraction ?? 1));
       const endTime = Math.max(startTime, Math.min(duration - 0.05, startTime + segmentDuration));
       sources[index] = {
         image: images[index],
@@ -2118,7 +2128,7 @@ async function createSegmentedVideoPaperGifBlob(segments) {
         startTime,
         endTime,
         duration: Math.max(0.65, endTime - startTime),
-        playbackDuration: stripGifSegmentDuration,
+        playbackDuration: expectedDuration || stripGifSegmentDuration,
       };
     }
 
@@ -2168,9 +2178,12 @@ async function createSingleVideoPaperGifBlob(segment) {
 
   try {
     await waitForVideoEvent(video, "loadedmetadata");
-    const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 3;
+    const expectedDuration = segment.expectedDuration || 0;
+    const duration = Number.isFinite(video.duration) && video.duration > 0
+      ? video.duration
+      : expectedDuration || stripGifSegmentDuration;
     const startTime = duration * (segment.startFraction ?? 0);
-    const segmentDuration = Math.max(0.9, duration * (segment.durationFraction ?? 1));
+    const segmentDuration = Math.max(0.9, expectedDuration || duration * (segment.durationFraction ?? 1));
     const endTime = Math.max(startTime, Math.min(duration - 0.05, startTime + segmentDuration));
     const loopDuration = Math.max(0.9, endTime - startTime);
     const { frameCount, frameDelay } = getGifFrameTiming(loopDuration);
@@ -2319,7 +2332,7 @@ function refreshRenderedPreviews() {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=photobooth-39").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-40").catch(() => {});
   });
 }
 
