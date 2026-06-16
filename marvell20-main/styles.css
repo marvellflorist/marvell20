@@ -744,7 +744,7 @@ h2 {
   border: 0;
   background: transparent;
   box-shadow: none;
-  object-fit: fill;
+  object-fit: contain;
 }
 
 [data-format="single"] .view-paper .visual-choice {

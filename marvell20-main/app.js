@@ -773,6 +773,7 @@ async function renderPaperControls(images) {
     const canvas = document.createElement("canvas");
     canvas.width = currentPreviewSize.width;
     canvas.height = currentPreviewSize.height;
+    canvas.style.aspectRatio = `${currentPreviewSize.width} / ${currentPreviewSize.height}`;
     await renderCachedComposition(canvas, {
       width: currentPreviewSize.width,
       height: currentPreviewSize.height,
@@ -786,6 +787,7 @@ async function renderPaperControls(images) {
     button.type = "button";
     button.className = "visual-choice";
     button.dataset.choiceId = paper.id;
+    button.style.aspectRatio = `${currentPreviewSize.width} / ${currentPreviewSize.height}`;
     button.classList.toggle("is-active", paper.id === state.selectedPaper);
     button.setAttribute("aria-pressed", paper.id === state.selectedPaper ? "true" : "false");
     button.setAttribute("aria-label", paper.name);
