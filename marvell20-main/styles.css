@@ -753,11 +753,8 @@ h2 {
 
 [data-format="single"] .view-paper .visual-choice {
   aspect-ratio: 2 / 3;
-}
-
-[data-format="single"] .view-paper .visual-choice {
-  width: auto;
-  height: min(60svh, 540px);
+  width: min(100%, 360px, calc(min(60svh, 540px) * 2 / 3));
+  height: auto;
 }
 
 [data-format="single"] .view-tone .visual-choice canvas {
@@ -1231,8 +1228,8 @@ h2 {
   }
 
   [data-format="single"] .view-paper .visual-choice {
-    width: auto;
-    height: min(54svh, 410px);
+    width: min(100%, 274px, calc(min(54svh, 410px) * 2 / 3));
+    height: auto;
   }
 
   [data-format="strip"] .view-paper .visual-choice {

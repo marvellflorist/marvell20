@@ -35,6 +35,7 @@ const finalFocus = document.querySelector(".final-focus");
 const qrCanvas = document.querySelector("#qrCanvas");
 const qrStatus = document.querySelector("#qrStatus");
 const exportButton = document.querySelector("#exportButton");
+const airdropButton = document.querySelector("#airdropButton");
 const gifButton = document.querySelector("#gifButton");
 const startAgainButton = document.querySelector("#startAgainButton");
 const scanBackButton = document.querySelector("#scanBackButton");
@@ -60,6 +61,8 @@ const maxExportCanvasArea = 16000000;
 const finalImageQuality = 0.96;
 const gifFrameDelayMs = 90;
 const maxGifFrames = 24;
+const stripGifSegmentDuration = 5;
+const maxStripGifFrames = maxGifFrames * 2;
 const archiveStoreName = "sessions";
 const cloudinaryCloudName = "dz2ajhfsm";
 const cloudinaryUploadPreset = "marvell20_upload";
@@ -161,11 +164,13 @@ function resetSession() {
   appShell.dataset.format = state.selectedFormat;
   document.documentElement.dataset.format = state.selectedFormat;
   syncCameraStageRatio();
-  exportButton.textContent = "Scan Strip";
-  gifButton.textContent = "Scan GIF";
-  qrStatus.textContent = "Preparing Cloudinary link...";
+  exportButton.textContent = "High Quality";
+  airdropButton.textContent = "AirDrop";
+  gifButton.textContent = "GIF";
+  qrStatus.textContent = "Preparing high-quality link...";
   qrCanvas.hidden = true;
   exportButton.disabled = false;
+  airdropButton.disabled = false;
   gifButton.disabled = false;
   gifButton.hidden = false;
   updateFormatUi();
@@ -181,7 +186,9 @@ function updateFormatUi() {
   });
   reviewTitle.textContent = state.selectedFormat === "single" ? "Review Your Photo" : "Review Your Strip";
   finalTitle.textContent = state.selectedFormat === "single" ? "Photo Ready" : "Strip Ready";
-  exportButton.textContent = state.selectedFormat === "single" ? "Scan Photo" : "Scan Strip";
+  exportButton.textContent = "High Quality";
+  airdropButton.textContent = "AirDrop";
+  gifButton.textContent = "GIF";
   gifButton.hidden = false;
   gifButton.disabled = false;
 }
@@ -1000,7 +1007,7 @@ function getStripLayout(width, height, compact = false) {
   };
 }
 
-async function drawVideoStripComposition(context, sources, tone, paper, width, height, localTime) {
+async function drawSequentialVideoStripComposition(context, sources, tone, paper, width, height, activeIndex, localTime) {
   drawPaper(context, paper, width, height);
 
   const layout = getStripLayout(width, height, true);
@@ -1008,9 +1015,11 @@ async function drawVideoStripComposition(context, sources, tone, paper, width, h
     const source = sources[index];
     const frame = layout.frames[index];
 
-    if (source?.video) {
-      const time = Math.min(source.endTime, source.startTime + localTime);
-      await seekVideo(source.video, Math.max(source.startTime, time));
+    if (index === activeIndex && source?.video) {
+      const duration = Math.max(0.05, source.duration || 0.65);
+      const playbackDuration = Math.max(duration, source.playbackDuration || duration);
+      const sourceOffset = Math.min(duration - 0.05, (Math.max(0, localTime) / playbackDuration) * duration);
+      await seekVideo(source.video, Math.max(source.startTime, Math.min(source.endTime, source.startTime + sourceOffset)));
       drawTonedImage(context, source.video, tone, frame);
     } else {
       drawTonedImage(context, source?.image, tone, frame);
@@ -1422,8 +1431,6 @@ async function prepareFinalSession() {
     console.warn("MARVELL20 archive save failed", error);
   }
 
-  await ensureCloudinaryImage(activeSessionRecord);
-
   return activeSessionRecord;
 }
 
@@ -1701,7 +1708,7 @@ function beginRetake(index = state.selectedIndex) {
 async function showFinal() {
   if (!state.selectedPaper) return;
   qrCanvas.hidden = true;
-  qrStatus.textContent = "Preparing Cloudinary link...";
+  qrStatus.textContent = "Preparing high-quality link...";
   await prepareFinalSession();
   setView("final");
   prepareFinalPreviewLoop();
@@ -1820,7 +1827,7 @@ function showCloudinaryQr(record, type = "photo") {
   try {
     drawSessionQrCode(qrCanvas, url);
     qrCanvas.hidden = false;
-    qrStatus.textContent = type === "gif" ? "Scan for GIF" : "Scan to save";
+    qrStatus.textContent = type === "gif" ? "Scan for GIF" : "Scan for high quality";
     setView("scan");
   } catch (error) {
     console.warn("MARVELL20 QR render failed", error);
@@ -1847,8 +1854,20 @@ function canvasToBlob(canvas, type = "image/jpeg", quality = finalImageQuality) 
   });
 }
 
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function setExportBusy(isBusy) {
   exportButton.disabled = isBusy;
+  airdropButton.disabled = isBusy;
   gifButton.disabled = isBusy;
   finalNextButton.disabled = isBusy || !state.selectedPaper;
 }
@@ -1861,13 +1880,54 @@ async function showPhotoQr() {
   try {
     const uploadedRecord = await ensureCloudinaryImage(record);
     showCloudinaryQr(uploadedRecord, "photo");
-    await updateSessionRecord({ exportStatus: "scanned_png" });
+    if (uploadedRecord.cloudinaryUrl) {
+      await updateSessionRecord({ exportStatus: "scanned_png" });
+    }
   } catch (error) {
     console.warn("MARVELL20 Cloudinary scan failed", error);
     exportButton.textContent = "Try Again";
   } finally {
     window.setTimeout(() => {
-      exportButton.textContent = state.selectedFormat === "single" ? "Scan Photo" : "Scan Strip";
+      exportButton.textContent = "High Quality";
+    }, 1400);
+    setExportBusy(false);
+  }
+}
+
+async function shareFinalImage() {
+  const record = await prepareFinalSession();
+  setExportBusy(true);
+  airdropButton.textContent = "Preparing...";
+
+  try {
+    const blob = await canvasToBlob(finalCanvas, "image/png");
+    const fileName = `marvell-20-${createPortraitFileName(record, "png")}`;
+
+    if (typeof File === "function" && navigator.share && navigator.canShare) {
+      const file = new File([blob], fileName, { type: "image/png" });
+      if (navigator.canShare({ files: [file] })) {
+        airdropButton.textContent = "Share...";
+        await navigator.share({
+          files: [file],
+          title: "MARVELL20",
+          text: "MARVELL20 portrait",
+        });
+        await updateSessionRecord({ exportStatus: "airdropped_png" });
+        return;
+      }
+    }
+
+    downloadBlob(blob, fileName);
+    airdropButton.textContent = "Downloaded";
+    await updateSessionRecord({ exportStatus: "downloaded_png" });
+  } catch (error) {
+    if (error?.name !== "AbortError") {
+      console.warn("MARVELL20 AirDrop export failed", error);
+      airdropButton.textContent = "Try Again";
+    }
+  } finally {
+    window.setTimeout(() => {
+      airdropButton.textContent = "AirDrop";
     }, 1400);
     setExportBusy(false);
   }
@@ -1900,8 +1960,12 @@ function hasGifVideoSegments() {
     && state.videoSegments.slice(0, count).some((segment) => segment?.blob);
 }
 
-function getGifFrameCount(loopDuration) {
-  return Math.max(10, Math.min(maxGifFrames, Math.ceil((loopDuration * 1000) / gifFrameDelayMs)));
+function getGifFrameTiming(loopDuration, maxFrames = maxGifFrames) {
+  const frameCount = Math.max(10, Math.min(maxFrames, Math.ceil((loopDuration * 1000) / gifFrameDelayMs)));
+  return {
+    frameCount,
+    frameDelay: Math.max(gifFrameDelayMs, Math.round((loopDuration * 1000) / frameCount)),
+  };
 }
 
 async function createStripGifBlob() {
@@ -2032,7 +2096,7 @@ async function createSegmentedVideoPaperGifBlob(segments) {
     for (let index = 0; index < count; index += 1) {
       const segment = segments[index];
       if (!segment?.blob) {
-        sources[index] = { image: images[index], duration: 0.65 };
+        sources[index] = { image: images[index], duration: 0.65, playbackDuration: stripGifSegmentDuration };
         continue;
       }
 
@@ -2050,20 +2114,32 @@ async function createSegmentedVideoPaperGifBlob(segments) {
       const segmentDuration = Math.max(0.65, duration * (segment.durationFraction ?? 1));
       const endTime = Math.max(startTime, Math.min(duration - 0.05, startTime + segmentDuration));
       sources[index] = {
+        image: images[index],
         video,
         startTime,
         endTime,
         duration: Math.max(0.65, endTime - startTime),
+        playbackDuration: stripGifSegmentDuration,
       };
     }
 
-    const loopDuration = Math.max(0.9, ...sources.map((source) => source.duration || 0.65));
-    const frameDelay = gifFrameDelayMs;
-    const frameCount = getGifFrameCount(loopDuration);
+    const loopDuration = stripGifSegmentDuration * count;
+    const { frameCount, frameDelay } = getGifFrameTiming(loopDuration, maxStripGifFrames);
 
-    for (let index = 0; index < frameCount; index += 1) {
-      const localTime = Math.min(loopDuration - 0.05, (loopDuration * index) / frameCount);
-      await drawVideoStripComposition(context, sources, tone, paper, canvas.width, canvas.height, Math.max(0, localTime));
+    for (let frameIndex = 0; frameIndex < frameCount; frameIndex += 1) {
+      const timelineTime = Math.min(loopDuration - 0.05, (loopDuration * frameIndex) / frameCount);
+      const activeIndex = Math.min(count - 1, Math.floor(timelineTime / stripGifSegmentDuration));
+      const localTime = timelineTime - activeIndex * stripGifSegmentDuration;
+      await drawSequentialVideoStripComposition(
+        context,
+        sources,
+        tone,
+        paper,
+        canvas.width,
+        canvas.height,
+        activeIndex,
+        localTime
+      );
       const frame = context.getImageData(0, 0, canvas.width, canvas.height).data;
       const palette = quantize(frame, 256);
       const indexed = applyPalette(frame, palette);
@@ -2101,8 +2177,7 @@ async function createSingleVideoPaperGifBlob(segment) {
     const segmentDuration = Math.max(0.9, duration * (segment.durationFraction ?? 1));
     const endTime = Math.max(startTime, Math.min(duration - 0.05, startTime + segmentDuration));
     const loopDuration = Math.max(0.9, endTime - startTime);
-    const frameDelay = gifFrameDelayMs;
-    const frameCount = getGifFrameCount(loopDuration);
+    const { frameCount, frameDelay } = getGifFrameTiming(loopDuration);
     const tone = getTone();
     const paper = getPaper();
 
@@ -2215,7 +2290,7 @@ async function showGifQr() {
     console.warn("MARVELL20 GIF export failed", error);
     gifButton.textContent = "Try Again";
     window.setTimeout(() => {
-      gifButton.textContent = "Scan GIF";
+      gifButton.textContent = "GIF";
     }, 1400);
   } finally {
     setExportBusy(false);
@@ -2248,7 +2323,7 @@ function refreshRenderedPreviews() {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=photobooth-37").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-38").catch(() => {});
   });
 }
 
@@ -2274,6 +2349,7 @@ toneNextButton.addEventListener("click", showToneStep);
 paperNextButton.addEventListener("click", showPaperStep);
 finalNextButton.addEventListener("click", showFinal);
 exportButton.addEventListener("click", showPhotoQr);
+airdropButton.addEventListener("click", shareFinalImage);
 gifButton.addEventListener("click", showGifQr);
 startAgainButton.addEventListener("click", startAgain);
 scanBackButton.addEventListener("click", () => {
