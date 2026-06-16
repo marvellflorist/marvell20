@@ -709,11 +709,13 @@ h2 {
   display: block;
   justify-self: center;
   align-self: start;
+  position: relative;
+  overflow: hidden;
   width: min(100%, 270px);
   max-width: 100%;
   padding: 0;
   border: 1px solid rgba(91, 7, 26, 0.32);
-  background: var(--ivory);
+  background: transparent;
   box-shadow: 0 12px 32px rgba(36, 24, 21, 0.14);
   box-sizing: border-box;
   transition:
@@ -739,6 +741,8 @@ h2 {
 }
 
 .view-paper .visual-choice canvas {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: 0;
