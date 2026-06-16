@@ -1,4 +1,4 @@
-const CACHE_NAME = "marvell-20-v90";
+const CACHE_NAME = "marvell-20-v91";
 const APP_SHELL = [
   "./index.html",
   "./photobooth.html",

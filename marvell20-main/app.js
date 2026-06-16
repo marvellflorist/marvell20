@@ -62,7 +62,6 @@ const finalImageQuality = 0.96;
 const gifFrameDelayMs = 90;
 const maxGifFrames = 24;
 const stripGifSegmentDuration = 5;
-const maxStripGifFrames = maxGifFrames * 2;
 const archiveStoreName = "sessions";
 const cloudinaryCloudName = "dz2ajhfsm";
 const cloudinaryUploadPreset = "marvell20_upload";
@@ -1007,7 +1006,7 @@ function getStripLayout(width, height, compact = false) {
   };
 }
 
-async function drawSequentialVideoStripComposition(context, sources, tone, paper, width, height, activeIndex, localTime) {
+async function drawParallelVideoStripComposition(context, sources, tone, paper, width, height, localTime) {
   drawPaper(context, paper, width, height);
 
   const layout = getStripLayout(width, height, true);
@@ -1015,7 +1014,7 @@ async function drawSequentialVideoStripComposition(context, sources, tone, paper
     const source = sources[index];
     const frame = layout.frames[index];
 
-    if (index === activeIndex && source?.video) {
+    if (source?.video) {
       const duration = Math.max(0.05, source.duration || 0.65);
       const playbackDuration = Math.max(duration, source.playbackDuration || duration);
       const sourceOffset = Math.min(duration - 0.05, (Math.max(0, localTime) / playbackDuration) * duration);
@@ -2123,21 +2122,18 @@ async function createSegmentedVideoPaperGifBlob(segments) {
       };
     }
 
-    const loopDuration = stripGifSegmentDuration * count;
-    const { frameCount, frameDelay } = getGifFrameTiming(loopDuration, maxStripGifFrames);
+    const loopDuration = Math.max(0.9, ...sources.map((source) => source.playbackDuration || source.duration || 0.65));
+    const { frameCount, frameDelay } = getGifFrameTiming(loopDuration);
 
     for (let frameIndex = 0; frameIndex < frameCount; frameIndex += 1) {
-      const timelineTime = Math.min(loopDuration - 0.05, (loopDuration * frameIndex) / frameCount);
-      const activeIndex = Math.min(count - 1, Math.floor(timelineTime / stripGifSegmentDuration));
-      const localTime = timelineTime - activeIndex * stripGifSegmentDuration;
-      await drawSequentialVideoStripComposition(
+      const localTime = Math.min(loopDuration - 0.05, (loopDuration * frameIndex) / frameCount);
+      await drawParallelVideoStripComposition(
         context,
         sources,
         tone,
         paper,
         canvas.width,
         canvas.height,
-        activeIndex,
         localTime
       );
       const frame = context.getImageData(0, 0, canvas.width, canvas.height).data;
@@ -2323,7 +2319,7 @@ function refreshRenderedPreviews() {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=photobooth-38").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-39").catch(() => {});
   });
 }
 
