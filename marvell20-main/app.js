@@ -49,12 +49,17 @@ const portraitSize = { width: 1600, height: 2400 };
 const singleFrameSize = { width: 1600, height: 2000 };
 const stripFrameSize = { width: 1600, height: 1200 };
 const stripSize = { width: 1200, height: 3600 };
-const tonePreviewSize = { width: 360, height: 900 };
+const tonePreviewSize = { width: 360, height: 1080 };
 const paperPreviewSize = { width: 360, height: 1080 };
 const gifFrameSize = { width: 720, height: 540 };
-const gifPaperSize = { width: 240, height: 720 };
+const gifPaperSize = { width: 360, height: 1080 };
 const singleGifFrameSize = { width: 480, height: 600 };
 const singleGifPaperSize = { width: 600, height: 900 };
+const maxExportScale = 2;
+const maxExportCanvasArea = 16000000;
+const finalImageQuality = 0.96;
+const gifFrameDelayMs = 90;
+const maxGifFrames = 24;
 const archiveStoreName = "sessions";
 const cloudinaryCloudName = "dz2ajhfsm";
 const cloudinaryUploadPreset = "marvell20_upload";
@@ -134,6 +139,7 @@ async function chooseFormat(format) {
   state.selectedFormat = format === "single" ? "single" : "strip";
   appShell.dataset.format = state.selectedFormat;
   document.documentElement.dataset.format = state.selectedFormat;
+  syncCameraStageRatio();
   updateFormatUi();
   setView("camera");
   await startCamera();
@@ -154,6 +160,7 @@ function resetSession() {
   state.previewVersion += 1;
   appShell.dataset.format = state.selectedFormat;
   document.documentElement.dataset.format = state.selectedFormat;
+  syncCameraStageRatio();
   exportButton.textContent = "Scan Strip";
   gifButton.textContent = "Scan GIF";
   qrStatus.textContent = "Preparing Cloudinary link...";
@@ -183,12 +190,43 @@ function getCaptureCount() {
   return state.selectedFormat === "single" ? 1 : 4;
 }
 
-function getCaptureSize() {
-  return state.selectedFormat === "single" ? singleFrameSize : stripFrameSize;
+function getCaptureFrameSize(format = state.selectedFormat) {
+  return format === "single" ? singleFrameSize : stripFrameSize;
+}
+
+function getCaptureSize(format = state.selectedFormat) {
+  return getCaptureFrameSize(format);
+}
+
+function getCaptureAspectRatio(format = state.selectedFormat) {
+  const size = getCaptureFrameSize(format);
+  return size.width / size.height;
 }
 
 function getOutputSize() {
   return state.selectedFormat === "single" ? portraitSize : stripSize;
+}
+
+function getFinalExportSize(format = state.selectedFormat) {
+  const baseSize = format === "single" ? portraitSize : stripSize;
+  const areaSafeScale = Math.sqrt(maxExportCanvasArea / (baseSize.width * baseSize.height));
+  const ratio = Math.max(1, Math.min(window.devicePixelRatio || 1, maxExportScale, areaSafeScale));
+  return {
+    width: Math.round(baseSize.width * ratio),
+    height: Math.round(baseSize.height * ratio),
+  };
+}
+
+function syncCameraStageRatio() {
+  const size = getCaptureFrameSize();
+  const ratio = `${size.width} / ${size.height}`;
+  cameraStage.style.aspectRatio = ratio;
+  appShell.style.setProperty("--camera-frame-ratio", ratio);
+}
+
+function setHighQualityCanvas(context) {
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
 }
 
 async function startCamera(deviceId = state.selectedDeviceId) {
@@ -358,6 +396,7 @@ function getSupportedRecordingType() {
 }
 
 function drawCameraFrame(context, width, height) {
+  setHighQualityCanvas(context);
   context.fillStyle = "#211b18";
   context.fillRect(0, 0, width, height);
 
@@ -377,7 +416,7 @@ function syncCameraPreviewSize() {
   const bounds = cameraStage.getBoundingClientRect();
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
   const width = Math.max(1, Math.round(bounds.width * ratio));
-  const height = Math.max(1, Math.round(bounds.height * ratio));
+  const height = Math.max(1, Math.round(width / getCaptureAspectRatio()));
 
   if (cameraPreviewCanvas.width !== width || cameraPreviewCanvas.height !== height) {
     cameraPreviewCanvas.width = width;
@@ -419,6 +458,7 @@ function startCameraRecording() {
 
   canvas.width = recordSize.width;
   canvas.height = recordSize.height;
+  setHighQualityCanvas(context);
 
   const drawRecordingFrame = () => {
     drawCameraFrame(context, canvas.width, canvas.height);
@@ -493,9 +533,10 @@ function capturePortrait() {
   captureCanvas.width = captureSize.width;
   captureCanvas.height = captureSize.height;
   const context = captureCanvas.getContext("2d");
+  setHighQualityCanvas(context);
   drawCameraFrame(context, captureSize.width, captureSize.height);
 
-  return captureCanvas.toDataURL("image/jpeg", 0.94);
+  return captureCanvas.toDataURL("image/jpeg", finalImageQuality);
 }
 
 function drawFallbackPortrait(context, width, height) {
@@ -866,6 +907,7 @@ async function renderCachedComposition(canvas, options = {}) {
     canvas.width = width;
     canvas.height = height;
     canvas.dataset.ratio = `${width}x${height}`;
+    setHighQualityCanvas(context);
     if (image) drawCoverImage(context, image, 0, 0, width, height);
     return;
   }
@@ -889,6 +931,7 @@ async function renderComposition(canvas, options = {}) {
   canvas.width = width;
   canvas.height = height;
   canvas.dataset.ratio = `${width}x${height}`;
+  setHighQualityCanvas(context);
 
   if (options.paperless) {
     drawToneOnlyComposition(context, images, tone, width, height, options.compact, format);
@@ -935,7 +978,7 @@ function drawStripComposition(context, images, tone, paper, width, height, compa
 }
 
 function getStripLayout(width, height, compact = false) {
-  const ratio = stripFrameSize.width / stripFrameSize.height;
+  const ratio = getCaptureAspectRatio("strip");
   const count = getCaptureCount();
   const sideMargin = Math.round(width * (compact ? 0.085 : 0.085));
   const gap = Math.round(width * (compact ? 0.035 : 0.035));
@@ -989,15 +1032,9 @@ function drawToneOnlyComposition(context, images, tone, width, height, compact =
     return;
   }
 
-  const gap = Math.round(width * 0.032);
-  const frameHeight = Math.floor((height - gap * (getCaptureCount() - 1)) / getCaptureCount());
-  for (let index = 0; index < getCaptureCount(); index += 1) {
-    drawTonedImage(context, images[index], tone, {
-      x: 0,
-      y: index * (frameHeight + gap),
-      width,
-      height: frameHeight,
-    });
+  const layout = getStripLayout(width, height, true);
+  for (let index = 0; index < layout.frames.length; index += 1) {
+    drawTonedImage(context, images[index], tone, layout.frames[index]);
   }
 
   if (tone.id === "archive") {
@@ -1061,24 +1098,38 @@ function drawPlaceholder(context, frame) {
   context.fillRect(frame.x, frame.y, frame.width, frame.height);
 }
 
-function drawCoverImage(context, image, x, y, width, height) {
-  const sourceWidth = image.videoWidth || image.naturalWidth || image.width;
-  const sourceHeight = image.videoHeight || image.naturalHeight || image.height;
-  const imageRatio = sourceWidth / sourceHeight;
-  const frameRatio = width / height;
-  let sw = sourceWidth;
-  let sh = sourceHeight;
-  let sx = 0;
-  let sy = 0;
-
-  if (imageRatio > frameRatio) {
-    sw = sourceHeight * frameRatio;
-    sx = (sourceWidth - sw) / 2;
-  } else {
-    sh = sourceWidth / frameRatio;
-    sy = (sourceHeight - sh) / 2;
+function getCoverCrop(sourceWidth, sourceHeight, targetWidth, targetHeight, alignX = 0.5, alignY = 0.5) {
+  if (!sourceWidth || !sourceHeight || !targetWidth || !targetHeight) {
+    return { sx: 0, sy: 0, sw: sourceWidth || 0, sh: sourceHeight || 0 };
   }
 
+  const sourceRatio = sourceWidth / sourceHeight;
+  const targetRatio = targetWidth / targetHeight;
+  let sw = sourceWidth;
+  let sh = sourceHeight;
+
+  // Shared object-fit: cover crop for live preview, capture, review/export, and GIF.
+  // Keep the default centered for subject safety; adjust alignX/alignY here if needed later.
+  if (sourceRatio > targetRatio) {
+    sw = sourceHeight * targetRatio;
+  } else {
+    sh = sourceWidth / targetRatio;
+  }
+
+  return {
+    sx: Math.max(0, (sourceWidth - sw) * alignX),
+    sy: Math.max(0, (sourceHeight - sh) * alignY),
+    sw,
+    sh,
+  };
+}
+
+function drawCoverImage(context, image, x, y, width, height, alignX = 0.5, alignY = 0.5) {
+  const sourceWidth = image.videoWidth || image.naturalWidth || image.width;
+  const sourceHeight = image.videoHeight || image.naturalHeight || image.height;
+  const { sx, sy, sw, sh } = getCoverCrop(sourceWidth, sourceHeight, width, height, alignX, alignY);
+
+  setHighQualityCanvas(context);
   context.drawImage(image, sx, sy, sw, sh, x, y, width, height);
 }
 
@@ -1102,6 +1153,7 @@ function drawContainImage(context, image, x, y, width, height) {
     targetX = x + (width - targetWidth) / 2;
   }
 
+  setHighQualityCanvas(context);
   context.drawImage(image, targetX, targetY, targetWidth, targetHeight);
 }
 
@@ -1347,8 +1399,9 @@ async function showArchive() {
 async function prepareFinalSession() {
   if (activeSessionRecord) return activeSessionRecord;
 
-  const outputSize = getOutputSize();
-  await renderComposition(finalCanvas, outputSize);
+  const exportSize = getFinalExportSize();
+  const images = await preloadCaptureImages();
+  await renderComposition(finalCanvas, { width: exportSize.width, height: exportSize.height, images });
   const finalImage = finalCanvas.toDataURL("image/png");
   state.sessionId = state.sessionId || createSessionId();
   activeSessionRecord = {
@@ -1775,7 +1828,7 @@ function showCloudinaryQr(record, type = "photo") {
   }
 }
 
-function canvasToBlob(canvas, type = "image/jpeg", quality = 0.92) {
+function canvasToBlob(canvas, type = "image/jpeg", quality = finalImageQuality) {
   return new Promise((resolve, reject) => {
     if (canvas.toBlob) {
       canvas.toBlob((blob) => {
@@ -1822,6 +1875,7 @@ function drawGifFrame(canvas, image, tone) {
   const context = canvas.getContext("2d");
   canvas.width = gifFrameSize.width;
   canvas.height = gifFrameSize.height;
+  setHighQualityCanvas(context);
   context.fillStyle = "#211b18";
   context.fillRect(0, 0, canvas.width, canvas.height);
   drawTonedImage(context, image, tone, { x: 0, y: 0, width: canvas.width, height: canvas.height });
@@ -1842,6 +1896,10 @@ function hasGifVideoSegments() {
   return state.selectedFormat === "strip"
     && state.videoSegments.length >= count
     && state.videoSegments.slice(0, count).some((segment) => segment?.blob);
+}
+
+function getGifFrameCount(loopDuration) {
+  return Math.max(10, Math.min(maxGifFrames, Math.ceil((loopDuration * 1000) / gifFrameDelayMs)));
 }
 
 async function createStripGifBlob() {
@@ -1892,7 +1950,9 @@ async function createStillSingleGifBlob() {
   canvas.width = singleGifPaperSize.width;
   canvas.height = singleGifPaperSize.height;
   await renderComposition(canvas, { width: canvas.width, height: canvas.height, images });
-  const frame = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+  const context = canvas.getContext("2d");
+  setHighQualityCanvas(context);
+  const frame = context.getImageData(0, 0, canvas.width, canvas.height).data;
   const palette = quantize(frame, 256);
   const indexed = applyPalette(frame, palette);
   gif.writeFrame(indexed, canvas.width, canvas.height, { palette, delay: 1500 });
@@ -1911,7 +1971,9 @@ async function createStillStripGifBlob() {
   canvas.width = gifPaperSize.width;
   canvas.height = gifPaperSize.height;
   await renderComposition(canvas, { width: canvas.width, height: canvas.height, images });
-  const frame = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+  const context = canvas.getContext("2d");
+  setHighQualityCanvas(context);
+  const frame = context.getImageData(0, 0, canvas.width, canvas.height).data;
   const palette = quantize(frame, 256);
   const indexed = applyPalette(frame, palette);
   gif.writeFrame(indexed, canvas.width, canvas.height, { palette, delay: 1500 });
@@ -1961,6 +2023,7 @@ async function createSegmentedVideoPaperGifBlob(segments) {
 
   canvas.width = gifPaperSize.width;
   canvas.height = gifPaperSize.height;
+  setHighQualityCanvas(context);
 
   try {
     const count = getCaptureCount();
@@ -1993,8 +2056,8 @@ async function createSegmentedVideoPaperGifBlob(segments) {
     }
 
     const loopDuration = Math.max(0.9, ...sources.map((source) => source.duration || 0.65));
-    const frameDelay = 250;
-    const frameCount = 12;
+    const frameDelay = gifFrameDelayMs;
+    const frameCount = getGifFrameCount(loopDuration);
 
     for (let index = 0; index < frameCount; index += 1) {
       const localTime = Math.min(loopDuration - 0.05, (loopDuration * index) / frameCount);
@@ -2023,6 +2086,7 @@ async function createSingleVideoPaperGifBlob(segment) {
 
   canvas.width = singleGifPaperSize.width;
   canvas.height = singleGifPaperSize.height;
+  setHighQualityCanvas(context);
   video.src = url;
   video.muted = true;
   video.playsInline = true;
@@ -2035,8 +2099,8 @@ async function createSingleVideoPaperGifBlob(segment) {
     const segmentDuration = Math.max(0.9, duration * (segment.durationFraction ?? 1));
     const endTime = Math.max(startTime, Math.min(duration - 0.05, startTime + segmentDuration));
     const loopDuration = Math.max(0.9, endTime - startTime);
-    const frameDelay = 250;
-    const frameCount = 12;
+    const frameDelay = gifFrameDelayMs;
+    const frameCount = getGifFrameCount(loopDuration);
     const tone = getTone();
     const paper = getPaper();
 
@@ -2182,7 +2246,7 @@ function refreshRenderedPreviews() {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=photobooth-36").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-37").catch(() => {});
   });
 }
 
@@ -2251,4 +2315,5 @@ appShell.addEventListener("pointerup", (event) => {
 });
 
 drawFormatSamples();
+syncCameraStageRatio();
 refreshRenderedPreviews();

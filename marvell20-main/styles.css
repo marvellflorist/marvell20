@@ -376,7 +376,7 @@ h2 {
   overflow: hidden;
   width: min(98vw, 1040px, calc(96svh * 0.8));
   height: auto;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: var(--camera-frame-ratio, 4 / 5);
   background: #d8c5a7;
   outline: 1px solid rgba(91, 7, 26, 0.28);
   box-shadow:
@@ -387,12 +387,12 @@ h2 {
 
 [data-format="single"] .camera-stage {
   width: min(98vw, 1040px, calc(96svh * 0.8));
-  aspect-ratio: 4 / 5;
+  aspect-ratio: var(--camera-frame-ratio, 4 / 5);
 }
 
 [data-format="strip"] .camera-stage {
   width: min(99vw, 1280px, calc(94svh * 1.3333));
-  aspect-ratio: 4 / 3;
+  aspect-ratio: var(--camera-frame-ratio, 4 / 3);
 }
 
 .camera-preview {
@@ -517,6 +517,12 @@ h2 {
   height: auto;
   outline: 1px solid rgba(91, 7, 26, 0.24);
   box-shadow: 0 34px 110px rgba(36, 24, 21, 0.3);
+}
+
+#reviewImage,
+#archivePreviewImage,
+#finalGifPreview {
+  object-fit: contain;
 }
 
 [data-format="single"] #reviewImage,
@@ -657,6 +663,7 @@ h2 {
   width: min(100%, 240px);
   height: auto;
   box-sizing: border-box;
+  object-fit: contain;
 }
 
 .view-paper {
@@ -737,7 +744,7 @@ h2 {
   border: 0;
   background: transparent;
   box-shadow: none;
-  object-fit: fill;
+  object-fit: contain;
 }
 
 [data-format="single"] .view-paper .visual-choice {
@@ -1001,6 +1008,7 @@ h2 {
   width: 100%;
   aspect-ratio: 2 / 3;
   object-fit: cover;
+  object-position: center;
   background: rgba(33, 27, 24, 0.08);
 }
 
