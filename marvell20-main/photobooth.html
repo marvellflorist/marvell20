@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no"
     />
-    <meta name="theme-color" content="#efe5d2" />
+    <meta name="theme-color" content="#050505" />
     <meta name="description" content="MARVELL20 portrait booth" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -16,29 +16,54 @@
     <link rel="manifest" href="/marvell20/manifest.json" />
     <link rel="icon" href="icons/marvell-logo-favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/marvell20/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css?v=photobooth-40" />
+    <link rel="stylesheet" href="styles.css?v=photobooth-75" />
   </head>
   <body>
     <main class="app-shell" data-view="home" data-format="strip">
+      <div class="top-controls booth-controls" aria-label="Experience controls">
+        <button class="sound-toggle" id="soundToggleButton" type="button" aria-label="Play sound" aria-pressed="false">
+          <svg class="sound-icon sound-icon-on" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+            <path d="M16.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="M18.8 6.2a8.2 8.2 0 0 1 0 11.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          <svg class="sound-icon sound-icon-off" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+            <path d="m17 9 4 4m0-4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </button>
+        <div class="language-toggle" aria-label="Language">
+          <button class="is-active" type="button" data-booth-lang="en" aria-pressed="true">EN</button>
+          <span aria-hidden="true">/</span>
+          <button type="button" data-booth-lang="id" aria-pressed="false">ID</button>
+        </div>
+      </div>
       <section class="view view-home" aria-labelledby="home-title">
         <div class="home-center">
           <h1 id="home-title">MARVELL20</h1>
-          <p class="home-subtitle">The Memory Garden</p>
-          <p class="home-date">15 June - 4 July 2026</p>
-          <button class="action action-primary" id="beginButton" type="button">Tap anywhere to begin</button>
-          <button class="action action-secondary" id="archiveButton" type="button" hidden>Archive</button>
+          <button class="home-tap" id="beginButton" type="button">TAP TO BEGIN</button>
+        </div>
+      </section>
+
+      <section class="view view-glimpse" aria-labelledby="glimpse-title">
+        <div class="glimpse-stage">
+          <div class="glimpse-copy">
+            <h2 id="glimpse-title">Leave your mark first.</h2>
+            <p id="glimpse-body">Take your portrait first. After it is saved, the memory garden opens around it.</p>
+          </div>
+          <button class="action action-primary glimpse-next" id="glimpseButton" type="button">Leave a Mark</button>
         </div>
       </section>
 
       <section class="view view-format" aria-labelledby="format-title">
-        <p class="view-label" id="format-title">Choose Format</p>
+        <p class="view-label" id="format-title">Pilih Format</p>
         <div class="format-options" aria-label="Photo format">
           <button class="format-choice" type="button" data-format-choice="single">
-            <span>Single Photo</span>
+            <span>Portrait</span>
             <canvas id="singleFormatCanvas" width="400" height="600" aria-hidden="true"></canvas>
           </button>
           <button class="format-choice" type="button" data-format-choice="strip">
-            <span>Strip of 4</span>
+            <span>Strip</span>
             <canvas id="stripFormatCanvas" width="240" height="720" aria-hidden="true"></canvas>
           </button>
         </div>
@@ -52,15 +77,13 @@
           <canvas id="captureCanvas" hidden></canvas>
           <div class="camera-fallback" id="cameraFallback">
             <span>Camera</span>
-            <button class="ghost-action" id="sourceButton" type="button">Select Source</button>
+            <button class="ghost-action" id="sourceButton" type="button">Pilih Kamera</button>
           </div>
           <div class="countdown" id="countdown" aria-live="polite"></div>
           <button class="capture-action" id="captureButton" type="button" aria-label="Capture"></button>
         </div>
         <footer class="screen-actions camera-actions">
-          <button class="action action-secondary" id="changeCameraButton" type="button">
-            Change Camera
-          </button>
+          <button class="action action-secondary" id="changeCameraButton" type="button">Ganti Kamera</button>
         </footer>
       </section>
 
@@ -77,7 +100,7 @@
       </section>
 
       <section class="view view-tone" aria-labelledby="tone-title">
-        <p class="view-label" id="tone-title">Choose Tone</p>
+        <p class="view-label" id="tone-title">Pilih Tone</p>
         <div class="portrait-focus">
           <canvas id="toneCanvas" width="1600" height="2400"></canvas>
         </div>
@@ -88,27 +111,34 @@
       </section>
 
       <section class="view view-paper" aria-labelledby="paper-title">
-        <p class="view-label" id="paper-title">Choose Paper</p>
+        <p class="view-label" id="paper-title">Pilih Paper</p>
         <div class="portrait-focus">
           <canvas id="paperCanvas" width="1600" height="2400"></canvas>
         </div>
         <div class="visual-options" id="paperControls" aria-label="Paper selection"></div>
         <footer class="screen-actions">
-          <button class="action action-primary" id="finalNextButton" type="button">Continue</button>
+          <button class="action action-primary" id="finalNextButton" type="button">Gunakan Foto</button>
         </footer>
       </section>
 
       <section class="view view-final" aria-labelledby="final-title">
-        <p class="view-label" id="final-title">Strip Ready</p>
+        <div class="archive-noise-montage" id="archiveNoiseMontage" aria-hidden="true"></div>
+        <div class="result-copy" aria-live="polite">
+          <p class="view-label" id="final-title">Trace Captured</p>
+          <p class="result-meta">MARVELL20 / 15 Juni - 4 Juli 2026</p>
+          <p class="result-body">Your portrait is saved. Now continue into the memory garden around it.</p>
+          <p class="trace-number" id="traceNumber">Trace No. 001</p>
+        </div>
         <div class="portrait-focus final-focus">
           <canvas id="finalCanvas" width="1600" height="2400"></canvas>
           <img id="finalGifPreview" alt="" hidden />
         </div>
         <footer class="screen-actions final-actions">
-          <button class="action action-primary" id="exportButton" type="button">High Quality</button>
-          <button class="action action-secondary" id="airdropButton" type="button">AirDrop</button>
+          <button class="action action-primary" id="airdropButton" type="button">Save Photo</button>
+          <button class="action action-secondary" id="storyContinueButton" type="button">Continue to Garden</button>
+          <button class="action action-secondary" id="exportButton" type="button">High Quality QR</button>
           <button class="action action-secondary" id="gifButton" type="button">GIF</button>
-          <button class="action action-secondary" id="startAgainButton" type="button">Start Again</button>
+          <button class="action action-secondary" id="startAgainButton" type="button">Retake</button>
         </footer>
       </section>
 
@@ -122,6 +152,14 @@
           <button class="action action-secondary" id="scanBackButton" type="button">Back</button>
           <button class="action action-primary" id="scanStartAgainButton" type="button">Start Again</button>
         </footer>
+      </section>
+
+      <section class="view view-story" aria-labelledby="story-title">
+        <div class="story-shell" id="storyShell">
+          <h2 id="story-title" hidden>The Memory Garden</h2>
+          <div class="story-progress" id="storyProgress" aria-hidden="true"></div>
+          <div class="story-chapters" id="storyChapters" tabindex="0" aria-label="Arsip MARVELL20"></div>
+        </div>
       </section>
 
       <section class="view view-archive" aria-labelledby="archive-title">
@@ -141,17 +179,27 @@
 
       <dialog class="camera-dialog" id="cameraDialog">
         <form method="dialog">
-          <p class="view-label">Camera</p>
+        <p class="view-label">Kamera</p>
           <select id="cameraSelect" aria-label="Camera source"></select>
           <menu>
-            <button class="action action-secondary" value="cancel" type="submit">Close</button>
-            <button class="action action-primary" id="applyCameraButton" value="default" type="submit">Use</button>
+            <button class="action action-secondary" value="cancel" type="submit">Tutup</button>
+            <button class="action action-primary" id="applyCameraButton" value="default" type="submit">Pakai</button>
           </menu>
         </form>
       </dialog>
     </main>
 
+    <div class="tap-halo-layer" id="tapHaloLayer" aria-hidden="true"></div>
+    <p class="guidance-hint" id="guidanceHint" aria-live="polite"></p>
+    <div class="save-confirmation" id="saveConfirmation" hidden>
+      <p>Photo saved. Continue to the memory garden?</p>
+      <div>
+        <button class="action action-primary" id="confirmArchiveButton" type="button">Continue to Garden</button>
+        <button class="action action-secondary" id="finishButton" type="button">Done</button>
+      </div>
+    </div>
+
     <script src="vendor/gifenc.global.js?v=14"></script>
-    <script src="app.js?v=photobooth-40"></script>
+    <script src="app.js?v=photobooth-75"></script>
   </body>
 </html>

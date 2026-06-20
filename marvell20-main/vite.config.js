@@ -3,6 +3,11 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   base: "/marvell20/",
+  server: {
+    watch: {
+      ignored: ["**/.edge-inspect-profile/**"],
+    },
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,

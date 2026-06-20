@@ -1,0 +1,6 @@
+node_modules/
+**/node_modules/
+*.zip
+*.000
+**/.edge-inspect-profile/
+**/public/assets/raw

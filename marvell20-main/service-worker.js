@@ -1,4 +1,4 @@
-const CACHE_NAME = "marvell-20-v93";
+const CACHE_NAME = "marvell-20-v128";
 const APP_SHELL = [
   "./index.html",
   "./photobooth.html",
@@ -20,6 +20,8 @@ const APP_SHELL = [
   "./vendor/gifenc.esm.js",
   "./whattoexpect.webp",
   "./lily.mp4",
+  "./slider.png",
+  "./Paper Slide - Sound Effect - Sound God (128k).mp3",
   "./JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.mp3",
   "./JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.ogg",
   "./marvell florist logo.svg",
@@ -28,6 +30,32 @@ const APP_SHELL = [
   "./Inter-Italic-VariableFont_opsz,wght.ttf",
   "./Relationship of mélodrame.ttf",
 ];
+
+APP_SHELL.push(
+  "./kiddo.mp3",
+  "./storybackground.png",
+  "./dustoverlay.png",
+  "./marvell20 indoor.jpeg",
+  "./young marvell.jpeg",
+  "./currentmarvell.png",
+  "./kid marvell.jpeg",
+  "./kid marvell;.jpeg",
+  "./labor.jpeg",
+  "./old papan.jpeg",
+  "./older papan.jpeg",
+  "./another old papan.jpeg",
+  "./still old papan.jpeg",
+  "./store in 2017 ..jpeg",
+  "./2021 store.jpeg",
+  "./storenowindoor.jpeg",
+  "./current bouquet.jpeg",
+  "./current bouquetr closeup.jpeg",
+  "./current boquuet.jpeg",
+  "./current campaign.jpeg",
+  "./current closeup bouquet 2.jpeg",
+  "./footer.jpeg",
+  "./storenow.jpeg"
+);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

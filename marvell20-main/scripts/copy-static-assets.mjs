@@ -25,6 +25,8 @@ const files = [
   "envelope.webp",
   "whattoexpect.webp",
   "lily.mp4",
+  "slider.png",
+  "Paper Slide - Sound Effect - Sound God (128k).mp3",
   "JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.mp3",
   "JOHN_MICHEL_CELLO-SAINT_SAENS_CARNIVAL_OF_ANIMALS_THE_SWAN.ogg",
   "marvell florist logo.svg",
@@ -58,3 +60,4 @@ await Promise.all(files.map((file) => {
 }));
 await copyDirIfExists(join(projectRoot, "icons"), join(dist, "icons"), "icons");
 await copyDirIfExists(join(projectRoot, "vendor"), join(dist, "vendor"), "vendor");
+await copyDirIfExists(join(projectRoot, "assets"), join(dist, "assets"), "assets");
