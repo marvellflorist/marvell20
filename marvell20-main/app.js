@@ -168,51 +168,51 @@ const FLOWERS = [
 
 const STORY_ASSETS = {
   room: {
-    hero: "storybackground.png",
-    atmosphere: "marvell20 indoor.jpeg",
-    bloom: "current closeup bouquet 2.jpeg",
+    hero: "assets/archive/story-background.png",
+    atmosphere: "assets/archive/marvell20-indoor.jpeg",
+    bloom: "assets/archive/current-closeup-bouquet-2.jpeg",
   },
   childMarvell: [
-    { src: "young marvell.jpeg", caption: "" },
-    { src: "kid marvell.jpeg", caption: "" },
-    { src: "kid marvell;.jpeg", caption: "" },
+    { src: "assets/archive/young-marvell.jpeg", caption: "" },
+    { src: "assets/archive/kid-marvell.jpeg", caption: "" },
+    { src: "assets/archive/kid-marvell-alt.jpeg", caption: "" },
   ],
   adultMarvell: {
-    src: "currentmarvell.png",
+    src: "assets/archive/current-marvell.png",
     caption: "",
   },
   oldStore: [
-    { src: "store in 2017 ..jpeg", caption: "" },
-    { src: "2021 store.jpeg", caption: "" },
+    { src: "assets/archive/store-2017.jpeg", caption: "" },
+    { src: "assets/archive/store-2021.jpeg", caption: "" },
   ],
   currentStore: [
-    { src: "storenowindoor.jpeg", caption: "" },
-    { src: "storenow.jpeg", caption: "" },
+    { src: "assets/archive/store-now-indoor.jpeg", caption: "" },
+    { src: "assets/archive/store-now.jpeg", caption: "" },
   ],
   floristWorking: [
-    { src: "labor.jpeg", caption: "" },
+    { src: "assets/archive/labor.jpeg", caption: "" },
   ],
   papanBunga: [
-    { src: "old papan.jpeg", caption: "" },
-    { src: "another old papan.jpeg", caption: "" },
+    { src: "assets/archive/old-papan.jpeg", caption: "" },
+    { src: "assets/archive/another-old-papan.jpeg", caption: "" },
   ],
   arrangements: [
-    { src: "current bouquet.jpeg", caption: "" },
-    { src: "current bouquetr closeup.jpeg", caption: "" },
+    { src: "assets/archive/current-bouquet.jpeg", caption: "" },
+    { src: "assets/archive/current-bouquet-closeup.jpeg", caption: "" },
   ],
   occasionImages: [
-    { src: "current campaign.jpeg", caption: "" },
+    { src: "assets/archive/current-campaign.jpeg", caption: "" },
   ],
   timeline: {
     bloomVideo: "lily.mp4",
-    slider: "slider.png",
+    slider: "assets/archive/slider.png",
   },
   nameIntro: {
-    portrait: "young marvell.jpeg",
+    portrait: "assets/archive/young-marvell.jpeg",
   },
   photoboothArchive: [],
   overlays: {
-    dust: "dustoverlay.png",
+    dust: "assets/archive/dust-overlay.png",
     grain: "",
     paper: "",
   },
@@ -430,7 +430,6 @@ const boothCopy = {
     bridgeButton: "Flowers for every occasion",
     occasionTitle: "Flowers for Every Occasion",
     occasionLines: [
-      "Flowers for every occasion.",
       "For the first hello.",
       "For the room waiting at home.",
       "For the apology that arrived late.",
@@ -597,7 +596,6 @@ const boothCopy = {
     bridgeButton: "Bunga untuk setiap rasa",
     occasionTitle: "Bunga Untuk Setiap Rasa",
     occasionLines: [
-      "Bunga untuk setiap rasa.",
       "Untuk sapaan pertama.",
       "Untuk ruang yang menunggu di rumah.",
       "Untuk maaf yang datang terlambat.",
@@ -773,11 +771,18 @@ function sleep(ms) {
 function guardedNavigate(callback, delay = 750) {
   if (state.navLocked) return;
   state.navLocked = true;
+  const activeButton = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
+  if (activeButton && !activeButton.disabled) activeButton.dataset.navDisabled = "true";
+  if (activeButton) activeButton.disabled = true;
   try {
     callback();
   } finally {
     window.setTimeout(() => {
       state.navLocked = false;
+      if (activeButton?.dataset.navDisabled === "true") {
+        activeButton.disabled = false;
+        delete activeButton.dataset.navDisabled;
+      }
     }, delay);
   }
 }
@@ -3733,33 +3738,50 @@ function buildFlowersOccasionScene(section) {
   stage.append(imageLayer, petals, title, line, controls);
   section.append(stage);
 
-  let lineIndex = 0;
+  let occasionLineIndex = 0;
+  let occasionTransitionLocked = false;
+  let occasionFinished = false;
   const lines = copy.occasionLines || [];
-  const showLine = () => {
+  const revealArchiveButton = () => {
+    occasionFinished = true;
+    section.classList.add("is-complete");
+    section.dataset.hint = copy.occasionReadyHint || copy.occasionButton;
+    section.dataset.intent = "tap";
+    skip.hidden = false;
+    skip.disabled = false;
+    scheduleGuidanceHint(300);
+  };
+  const showLine = (nextIndex) => {
     if (archiveScenes[state.currentScene]?.id !== "flowersOccasion") return;
+    if (!lines.length) {
+      revealArchiveButton();
+      return;
+    }
+    const boundedIndex = Math.max(0, Math.min(lines.length - 1, nextIndex));
+    occasionLineIndex = boundedIndex;
+    occasionTransitionLocked = true;
     line.classList.remove("is-visible");
     queueSceneTimer(() => {
-      line.textContent = lines[lineIndex] || "";
+      line.textContent = lines[occasionLineIndex] || "";
       line.classList.add("is-visible");
-      lineIndex += 1;
-      if (lineIndex >= lines.length) {
-        section.classList.add("is-complete");
-        section.dataset.hint = copy.occasionReadyHint || copy.occasionButton;
-        section.dataset.intent = "tap";
-        skip.hidden = false;
-        skip.disabled = false;
-        scheduleGuidanceHint(900);
-        return;
-      }
-      queueSceneTimer(showLine, 3300);
-    }, lineIndex === 0 ? 80 : 620);
+      queueSceneTimer(() => {
+        occasionTransitionLocked = false;
+        if (occasionLineIndex >= lines.length - 1) revealArchiveButton();
+      }, 220);
+    }, line.textContent ? 150 : 40);
+  };
+  const advanceLine = () => {
+    if (occasionTransitionLocked || occasionFinished) return;
+    showLine(occasionLineIndex + 1);
   };
 
   section.startOccasionSequence = () => {
     if (section.classList.contains("is-started")) return;
     section.classList.add("is-started");
-    lineIndex = 0;
-    showLine();
+    section.dataset.hint = copy.tapPrompt;
+    section.dataset.intent = "tap";
+    showLine(0);
+    scheduleGuidanceHint(900);
   };
 
   skip.addEventListener("click", () => {
@@ -3769,7 +3791,7 @@ function buildFlowersOccasionScene(section) {
   });
   section.addEventListener("click", (event) => {
     if (event.target.closest(".archive-occasion-button")) return;
-    if (section.classList.contains("is-complete")) guardedNavigate(() => goToScene(state.currentScene + 1));
+    advanceLine();
   });
 }
 
@@ -3876,8 +3898,44 @@ function createPlantedFlowerElement(data, options = {}) {
   node.style.setProperty("--flower-color", flower.color);
   node.style.zIndex = String(Math.round(data.yPercent ?? 70));
   node.append(createCssFlower(flower, "planted-flower-mark"));
-  if (!options.final) node.setAttribute("aria-label", `${flower.displayName} planted flower`);
+  if (!options.final) {
+    const hitbox = document.createElement("span");
+    hitbox.className = "flower-hitbox";
+    hitbox.setAttribute("aria-label", `${flower.displayName} planted flower`);
+    node.append(hitbox);
+  }
   return node;
+}
+
+function forceShowArchiveScene(sceneId) {
+  if (!storyChaptersContainer) return false;
+  const index = archiveScenes.findIndex((scene) => scene.id === sceneId);
+  if (index < 0) return false;
+  state.currentScene = index;
+  storyChaptersContainer.dataset.currentScene = sceneId;
+  storyChaptersContainer.querySelectorAll(".archive-scene").forEach((section, sectionIndex) => {
+    section.classList.toggle("is-active", sectionIndex === index);
+    section.classList.toggle("is-unlocked", sectionIndex === index);
+  });
+  storyProgress?.querySelectorAll("span").forEach((dot, dotIndex) => {
+    dot.classList.toggle("is-active", dotIndex === index);
+    dot.classList.toggle("is-past", dotIndex < index);
+  });
+  setText("#story-title", getArchiveSceneTitle(archiveScenes[index]));
+  return true;
+}
+
+function navigateToFinalMark() {
+  const finalIndex = archiveScenes.findIndex((scene) => scene.id === "markFinal");
+  if (finalIndex < 0) return;
+  try {
+    goToScene(finalIndex);
+    const active = storyChaptersContainer?.querySelector(".archive-scene-markFinal.is-active");
+    if (!active) forceShowArchiveScene("markFinal");
+  } catch (error) {
+    console.warn("MARVELL20 final mark navigation fallback", error);
+    forceShowArchiveScene("markFinal");
+  }
 }
 
 function buildGardenPlantScene(section) {
@@ -3912,7 +3970,7 @@ function buildGardenPlantScene(section) {
     plantedLayer.replaceChildren();
     getGardenFlowers().forEach((flower) => {
       const node = createPlantedFlowerElement(flower);
-      node.addEventListener("click", (event) => {
+      node.querySelector(".flower-hitbox")?.addEventListener("click", (event) => {
         event.stopPropagation();
         openPlantedFlowerPanel(section, flower.id);
       });
@@ -3951,6 +4009,7 @@ function buildGardenPlantScene(section) {
     void reaction.offsetWidth;
     reaction.classList.add("is-active");
     button.hidden = false;
+    button.disabled = false;
     section.classList.add("has-planted");
     playPlantRevealSound();
   };
@@ -3962,8 +4021,10 @@ function buildGardenPlantScene(section) {
   });
   button.addEventListener("click", (event) => {
     event.stopPropagation();
+    event.preventDefault();
+    if (pendingFlower) saveLastPlantedFlower(pendingFlower);
     hideGuidanceHint();
-    guardedNavigate(() => goToScene(state.currentScene + 1));
+    guardedNavigate(navigateToFinalMark);
   });
   renderStored();
 }
@@ -4490,7 +4551,7 @@ function goToScene(index, options = {}) {
   }
   if (archiveScenes[nextIndex]?.id === "flowersOccasion") {
     const activeOccasion = storyChaptersContainer.querySelector(".archive-scene-flowersOccasion.is-active");
-    queueSceneTimer(() => activeOccasion?.startOccasionSequence?.(), 500);
+    queueSceneTimer(() => activeOccasion?.startOccasionSequence?.(), 90);
   }
   if (archiveScenes[nextIndex]?.id === "montage") {
     const activeMontage = storyChaptersContainer.querySelector(".archive-scene-montage.is-active");
@@ -5129,7 +5190,7 @@ function refreshRenderedPreviews() {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=photobooth-75").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-76").catch(() => {});
   });
 }
 

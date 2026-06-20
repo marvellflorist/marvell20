@@ -1,4 +1,4 @@
-const CACHE_NAME = "marvell-20-v128";
+const CACHE_NAME = "marvell-20-v129";
 const APP_SHELL = [
   "./index.html",
   "./photobooth.html",
@@ -33,28 +33,26 @@ const APP_SHELL = [
 
 APP_SHELL.push(
   "./kiddo.mp3",
-  "./storybackground.png",
-  "./dustoverlay.png",
-  "./marvell20 indoor.jpeg",
-  "./young marvell.jpeg",
-  "./currentmarvell.png",
-  "./kid marvell.jpeg",
-  "./kid marvell;.jpeg",
-  "./labor.jpeg",
-  "./old papan.jpeg",
-  "./older papan.jpeg",
-  "./another old papan.jpeg",
-  "./still old papan.jpeg",
-  "./store in 2017 ..jpeg",
-  "./2021 store.jpeg",
-  "./storenowindoor.jpeg",
-  "./current bouquet.jpeg",
-  "./current bouquetr closeup.jpeg",
-  "./current boquuet.jpeg",
-  "./current campaign.jpeg",
-  "./current closeup bouquet 2.jpeg",
-  "./footer.jpeg",
-  "./storenow.jpeg"
+  "./assets/archive/story-background.png",
+  "./assets/archive/dust-overlay.png",
+  "./assets/archive/marvell20-indoor.jpeg",
+  "./assets/archive/young-marvell.jpeg",
+  "./assets/archive/kid-marvell.jpeg",
+  "./assets/archive/kid-marvell-alt.jpeg",
+  "./assets/archive/current-marvell.png",
+  "./assets/archive/labor.jpeg",
+  "./assets/archive/old-papan.jpeg",
+  "./assets/archive/another-old-papan.jpeg",
+  "./assets/archive/store-2017.jpeg",
+  "./assets/archive/store-2021.jpeg",
+  "./assets/archive/store-now-indoor.jpeg",
+  "./assets/archive/store-now.jpeg",
+  "./assets/archive/current-bouquet.jpeg",
+  "./assets/archive/current-bouquet-closeup.jpeg",
+  "./assets/archive/current-campaign.jpeg",
+  "./assets/archive/current-closeup-bouquet-2.jpeg",
+  "./assets/archive/slider.png",
+  "./footer.jpeg"
 );
 
 self.addEventListener("install", (event) => {
