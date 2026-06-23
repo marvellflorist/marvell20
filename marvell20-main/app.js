@@ -766,6 +766,23 @@ function hideGuidanceHint() {
   guidanceHint?.classList.remove("is-visible");
 }
 
+function hasVisibleForwardControl(scope = document) {
+  const controls = scope.querySelectorAll([
+    ".archive-scene-next",
+    ".archive-garden-finish",
+    ".archive-mark-actions .action",
+    ".archive-montage-actions .action",
+    "#storyContinueButton",
+    "#confirmArchiveButton",
+  ].join(","));
+  return [...controls].some((control) => {
+    if (!(control instanceof HTMLElement)) return false;
+    if (control.hidden || control.disabled || control.getAttribute("aria-disabled") === "true") return false;
+    if (control.offsetParent === null && getComputedStyle(control).position !== "fixed") return false;
+    return true;
+  });
+}
+
 function scheduleGuidanceHint(delayOverride) {
   hideGuidanceHint();
   if (!guidanceHint || state.isCapturing) return;
@@ -777,6 +794,14 @@ function scheduleGuidanceHint(delayOverride) {
     const activeStoryPage = latestView === "story"
       ? storyChaptersContainer?.querySelector(".archive-scene.is-active")
       : null;
+    if (activeStoryPage && hasVisibleForwardControl(activeStoryPage)) {
+      hideGuidanceHint();
+      return;
+    }
+    if (latestView !== "story" && hasVisibleForwardControl(document)) {
+      hideGuidanceHint();
+      return;
+    }
     const text = activeStoryPage?.dataset.hint
       || copy[`hint${latestView.charAt(0).toUpperCase()}${latestView.slice(1)}`]
       || hintTextByView[latestView]
@@ -2953,6 +2978,7 @@ function showNextButton() {
   if (!next) return;
   next.hidden = false;
   next.disabled = false;
+  hideGuidanceHint();
 }
 
 function unlockScene() {
@@ -6511,7 +6537,7 @@ function refreshRenderedPreviews() {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=photobooth-92").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-94").catch(() => {});
   });
 }
 

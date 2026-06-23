@@ -7156,6 +7156,57 @@ button:disabled {
   user-select: none;
 }
 
+/* Hit target repair: button interiors should never steal the clickable surface. */
+button,
+[role="button"],
+.action,
+.format-choice,
+.visual-choice,
+.archive-open-button,
+.archive-plain-button,
+.archive-scene-next,
+.memory-flower-button,
+.memory-pixel-key {
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+button::before,
+button::after,
+[role="button"]::before,
+[role="button"]::after,
+.action::before,
+.action::after,
+.format-choice::before,
+.format-choice::after,
+.visual-choice::before,
+.visual-choice::after,
+.archive-open-button::before,
+.archive-open-button::after,
+.archive-plain-button::before,
+.archive-plain-button::after,
+.archive-scene-next::before,
+.archive-scene-next::after,
+.memory-flower-button::before,
+.memory-flower-button::after,
+.memory-pixel-key::before,
+.memory-pixel-key::after {
+  pointer-events: none;
+}
+
+button > *,
+[role="button"] > *,
+.action > *,
+.format-choice > *,
+.visual-choice > *,
+.archive-open-button > *,
+.archive-plain-button > *,
+.archive-scene-next > *,
+.memory-flower-button > *,
+.memory-pixel-key > * {
+  pointer-events: none;
+}
+
 .memory-scene,
 .memory-bg,
 .memory-sky-shimmer,
