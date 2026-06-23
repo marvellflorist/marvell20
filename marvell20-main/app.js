@@ -725,7 +725,9 @@ function guardedNavigate(callback, delay = 520) {
   if (activeButton && !activeButton.disabled) activeButton.dataset.navDisabled = "true";
   if (activeButton) activeButton.disabled = true;
   try {
-    callback();
+    Promise.resolve(callback()).catch((error) => {
+      console.warn("MARVELL20 navigation failed", error);
+    });
   } finally {
     window.setTimeout(() => {
       state.navLocked = false;
@@ -778,6 +780,7 @@ function hasVisibleForwardControl(scope = document) {
   return [...controls].some((control) => {
     if (!(control instanceof HTMLElement)) return false;
     if (control.hidden || control.disabled || control.getAttribute("aria-disabled") === "true") return false;
+    if (getComputedStyle(control).visibility === "hidden") return false;
     if (control.offsetParent === null && getComputedStyle(control).position !== "fixed") return false;
     return true;
   });
@@ -825,15 +828,15 @@ function setBusy(isBusy) {
   else scheduleGuidanceHint();
 }
 
-async function beginSession() {
-  await unlockStoryAudio(false);
+function beginSession() {
+  unlockStoryAudio(false).catch(() => {});
   playInteractionSound("click");
   resetSession();
   setView("glimpse");
 }
 
-async function startPhotoboothFromGlimpse() {
-  await unlockStoryAudio(false);
+function startPhotoboothFromGlimpse() {
+  unlockStoryAudio(false).catch(() => {});
   playInteractionSound("soft");
   setView("format");
 }
@@ -3053,7 +3056,7 @@ function buildGateScene(section) {
     hideGuidanceHint();
     section.classList.add("is-opened");
     playInteractionSound("soft");
-    queueSceneTimer(() => guardedNavigate(() => goToScene(state.currentScene + 1), 750), 1050);
+    queueSceneTimer(() => goToScene(state.currentScene + 1), 1050);
   };
   section.addEventListener("click", (event) => {
     if (event.target.closest(".archive-scene-next")) return;
@@ -3267,7 +3270,7 @@ function buildNameIntroScene(section) {
     section.classList.remove("is-awaiting-next-action");
     section.classList.add("is-opened");
     playArchiveTapSound();
-    queueSceneTimer(() => guardedNavigate(() => goToScene(state.currentScene + 1), 650), 520);
+    queueSceneTimer(() => goToScene(state.currentScene + 1), 520);
   };
 
   ["pointerdown", "pointermove"].forEach((eventName) => {
@@ -3688,7 +3691,7 @@ function buildRoomNoticeScene(section) {
     playInteractionSound("soft");
     if (index >= lines.length) {
       section.classList.add("is-opened");
-      queueSceneTimer(() => guardedNavigate(() => goToScene(state.currentScene + 1), 750), 700);
+      queueSceneTimer(() => goToScene(state.currentScene + 1), 700);
     }
   };
   hitbox.addEventListener("click", (event) => {
@@ -6537,16 +6540,16 @@ function refreshRenderedPreviews() {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=photobooth-94").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-99").catch(() => {});
   });
 }
 
 function handleBeginTap(event) {
   event?.preventDefault();
-  event.stopPropagation();
+  event?.stopPropagation?.();
   guardedNavigate(() => {
     beginSession();
-  }, 900);
+  }, 420);
 }
 
 beginButton.addEventListener("click", handleBeginTap);

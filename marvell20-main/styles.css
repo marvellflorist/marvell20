@@ -1887,7 +1887,12 @@ h1 {
 }
 
 .home-tap {
+  position: relative;
+  z-index: 3;
   border: 0;
+  min-width: min(72vw, 420px);
+  min-height: 64px;
+  padding: 18px 28px;
   background: transparent;
   color: #ffffff;
   font-size: clamp(14px, 2vw, 18px);
@@ -1897,6 +1902,8 @@ h1 {
   outline: none;
   box-shadow: none;
   -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 #beginButton.home-tap,
@@ -7011,6 +7018,33 @@ button:disabled {
   z-index: 30;
 }
 
+.archive-scene-next {
+  position: absolute;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  z-index: 60;
+  min-width: 132px;
+  min-height: 52px;
+  padding: 0 22px;
+  border: 1px solid rgba(255, 220, 220, 0.34);
+  background: var(--ruby);
+  color: #fff7ef;
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.36),
+    0 0 22px rgba(182, 15, 52, 0.24);
+  font-family: "Inter Variable";
+  font-size: 12px;
+  font-weight: 780;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.archive-scene-next:active {
+  transform: translateY(1px) scale(0.98);
+}
+
 .memory-garden-tray {
   position: absolute;
   left: 0;
@@ -7154,6 +7188,53 @@ button:disabled {
   image-rendering: crisp-edges;
   -webkit-user-drag: none;
   user-select: none;
+}
+
+/* View isolation: hidden screens must not leave interactive ghosts above active UI. */
+.app-shell .view {
+  visibility: hidden;
+}
+
+.app-shell[data-view="home"] .view-home,
+.app-shell[data-view="glimpse"] .view-glimpse,
+.app-shell[data-view="format"] .view-format,
+.app-shell[data-view="camera"] .view-camera,
+.app-shell[data-view="review"] .view-review,
+.app-shell[data-view="tone"] .view-tone,
+.app-shell[data-view="paper"] .view-paper,
+.app-shell[data-view="final"] .view-final,
+.app-shell[data-view="scan"] .view-scan,
+.app-shell[data-view="story"] .view-story,
+.app-shell[data-view="archive"] .view-archive {
+  visibility: visible;
+}
+
+.app-shell .view:not(.view-home):not(.view-glimpse):not(.view-format):not(.view-camera):not(.view-review):not(.view-tone):not(.view-paper):not(.view-final):not(.view-scan):not(.view-story):not(.view-archive),
+.app-shell[data-view="home"] .view:not(.view-home),
+.app-shell[data-view="glimpse"] .view:not(.view-glimpse),
+.app-shell[data-view="format"] .view:not(.view-format),
+.app-shell[data-view="camera"] .view:not(.view-camera),
+.app-shell[data-view="review"] .view:not(.view-review),
+.app-shell[data-view="tone"] .view:not(.view-tone),
+.app-shell[data-view="paper"] .view:not(.view-paper),
+.app-shell[data-view="final"] .view:not(.view-final),
+.app-shell[data-view="scan"] .view:not(.view-scan),
+.app-shell[data-view="story"] .view:not(.view-story),
+.app-shell[data-view="archive"] .view:not(.view-archive) {
+  pointer-events: none !important;
+}
+
+.archive-scene {
+  visibility: hidden;
+}
+
+.app-shell[data-view="story"] .archive-scene.is-active {
+  visibility: visible;
+}
+
+.app-shell[data-view="story"] .archive-scene:not(.is-active),
+.app-shell[data-view="story"] .archive-scene:not(.is-active) * {
+  pointer-events: none !important;
 }
 
 /* Hit target repair: button interiors should never steal the clickable surface. */
