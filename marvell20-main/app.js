@@ -415,6 +415,11 @@ const boothCopy = {
     finalMarkFooter: "Marvell Florist - 20 years",
     returnBooth: "Return to Photo Booth",
     viewGarden: "View the Garden",
+    replayPhoto: "Replay Photo",
+    keyboardSpace: "Space",
+    keyboardDelete: "Delete",
+    keyboardClear: "Clear",
+    keyboardDone: "Done",
     hintHome: "Tap",
     hintGlimpse: "Tap",
     hintFormat: "Tap",
@@ -557,6 +562,11 @@ const boothCopy = {
     finalMarkFooter: "Marvell Florist - 20 tahun",
     returnBooth: "Kembali ke Photobooth",
     viewGarden: "Lihat Taman",
+    replayPhoto: "Lihat Foto Lagi",
+    keyboardSpace: "Spasi",
+    keyboardDelete: "Hapus",
+    keyboardClear: "Bersihkan",
+    keyboardDone: "Selesai",
     hintHome: "Ketuk",
     hintGlimpse: "Ketuk",
     hintFormat: "Ketuk",
@@ -598,7 +608,7 @@ const state = {
   finalPreviewGifUrl: "",
   finalPreviewToken: 0,
   isSoundEnabled: false,
-  language: "en",
+  language: "id",
   audioUnlocked: false,
   hintTimer: 0,
   hintHideTimer: 0,
@@ -683,6 +693,7 @@ function applyLanguage(language = state.language) {
     renderStory(state.storyPhotoRecord);
     goToScene(sceneIndex, { silent: true, instant: true });
   }
+  syncArchiveAccess();
 }
 
 function setView(view) {
@@ -707,7 +718,7 @@ function sleep(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function guardedNavigate(callback, delay = 750) {
+function guardedNavigate(callback, delay = 520) {
   if (state.navLocked) return;
   state.navLocked = true;
   const activeButton = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
@@ -724,6 +735,18 @@ function guardedNavigate(callback, delay = 750) {
       }
     }, delay);
   }
+}
+
+function hasCompletedPhotoSession() {
+  return Boolean(activeSessionRecord?.id || state.sessionId || getSelectedCapture());
+}
+
+function syncArchiveAccess() {
+  if (!archiveButton) return;
+  const canEnter = Boolean(activeSessionRecord?.id);
+  archiveButton.disabled = !canEnter;
+  archiveButton.hidden = !canEnter;
+  archiveButton.setAttribute("aria-disabled", String(!canEnter));
 }
 
 function showTapHalo(event) {
@@ -809,6 +832,7 @@ function resetSession() {
   state.selectedFormat = "strip";
   state.sessionId = "";
   activeSessionRecord = null;
+  syncArchiveAccess();
   clearVideoClip();
   imageCache.clear();
   previewCache.clear();
@@ -1467,6 +1491,7 @@ function invalidatePreviewCache(clearImages = false) {
 
 function markFinalDirty() {
   activeSessionRecord = null;
+  syncArchiveAccess();
 }
 
 function clearVideoClip() {
@@ -2196,6 +2221,7 @@ async function getArchiveRecords() {
 async function updateSessionRecord(updates) {
   if (!activeSessionRecord) return;
   activeSessionRecord = { ...activeSessionRecord, ...updates };
+  syncArchiveAccess();
   try {
     await saveSessionRecord(activeSessionRecord);
   } catch (error) {
@@ -2302,6 +2328,7 @@ async function prepareFinalSession() {
   };
   saveLatestPhotoReference(finalImage);
   updateTraceLabel(activeSessionRecord);
+  syncArchiveAccess();
 
   saveSessionRecord(activeSessionRecord).catch((error) => {
     console.warn("MARVELL20 archive save failed", error);
@@ -3880,11 +3907,12 @@ function createPixelMemoryGarden(stage, options = {}) {
     <div class="memory-garden-badge" aria-live="polite"></div>
     <button type="button" class="memory-garden-save">Save Garden</button>
     <div class="memory-garden-visitor">
-      <label>Your name <input class="memory-garden-name" maxlength="18" autocomplete="off"></label>
-      <label>Message <input class="memory-garden-message" maxlength="54" autocomplete="off"></label>
+      <label>Your name <input class="memory-garden-name" maxlength="18" autocomplete="off" inputmode="none" readonly></label>
+      <label>Message <input class="memory-garden-message" maxlength="54" autocomplete="off" inputmode="none" readonly></label>
       <button type="button" class="memory-garden-confirm" disabled>Confirm planting</button>
       <button type="button" class="memory-garden-next-visitor" hidden>Take next photo</button>
     </div>
+    <div class="memory-pixel-keyboard" hidden></div>
     <div class="memory-garden-tray"></div>
     <div class="memory-garden-tip" role="status" aria-live="polite"></div>
     <div class="memory-garden-tooltip" hidden></div>
@@ -3904,6 +3932,7 @@ function createPixelMemoryGarden(stage, options = {}) {
   const messageInput = root.querySelector(".memory-garden-message");
   const confirmButton = root.querySelector(".memory-garden-confirm");
   const nextVisitorButton = root.querySelector(".memory-garden-next-visitor");
+  const keyboard = root.querySelector(".memory-pixel-keyboard");
   const assetCache = {};
   const stars = Array.from({ length: 120 }, () => ({
     x: Math.random(), y: Math.random() * 0.55, r: 0.5 + Math.random() * 1.5,
@@ -3927,7 +3956,73 @@ function createPixelMemoryGarden(stage, options = {}) {
   let session = getMemoryGardenSession(options.photoId);
   let animationFrame = 0;
   let isDestroyed = false;
+  let activeKeyboardInput = null;
   nameInput.value = localStorage.getItem(GARDEN_STORAGE_KEYS.visitorName) || "";
+
+  function syncGardenInputLabels() {
+    const gardenLabels = root.querySelectorAll(".memory-garden-visitor label");
+    if (gardenLabels[0]?.firstChild) gardenLabels[0].firstChild.textContent = state.language === "id" ? "Namamu " : "Your name ";
+    if (gardenLabels[1]?.firstChild) gardenLabels[1].firstChild.textContent = state.language === "id" ? "Pesan " : "Message ";
+    confirmButton.textContent = state.language === "id" ? "Tanam bunga" : "Confirm planting";
+    nextVisitorButton.textContent = state.language === "id" ? "Foto berikutnya" : "Take next photo";
+  }
+
+  function setKeyboardInputValue(input, value) {
+    const maxLength = Number(input.maxLength || 54);
+    input.value = value.slice(0, maxLength);
+    if (input === nameInput) localStorage.setItem(GARDEN_STORAGE_KEYS.visitorName, input.value.trim());
+  }
+
+  function hidePixelKeyboard() {
+    activeKeyboardInput = null;
+    keyboard.hidden = true;
+    keyboard.replaceChildren();
+  }
+
+  function showPixelKeyboard(input) {
+    activeKeyboardInput = input;
+    const copyNow = getCopy();
+    const rows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+    keyboard.hidden = false;
+    keyboard.replaceChildren();
+    rows.forEach((row) => {
+      const rowElement = document.createElement("div");
+      rowElement.className = "memory-pixel-keyboard-row";
+      [...row].forEach((letter) => {
+        const key = document.createElement("button");
+        key.type = "button";
+        key.className = "memory-pixel-key";
+        key.textContent = letter;
+        key.addEventListener("click", () => {
+          if (!activeKeyboardInput) return;
+          setKeyboardInputValue(activeKeyboardInput, `${activeKeyboardInput.value}${letter}`);
+          playInteractionSound("click");
+        });
+        rowElement.append(key);
+      });
+      keyboard.append(rowElement);
+    });
+    const utilityRow = document.createElement("div");
+    utilityRow.className = "memory-pixel-keyboard-row is-utility";
+    [
+      { label: copyNow.keyboardSpace, action: () => setKeyboardInputValue(activeKeyboardInput, `${activeKeyboardInput.value} `), wide: true },
+      { label: copyNow.keyboardDelete, action: () => setKeyboardInputValue(activeKeyboardInput, activeKeyboardInput.value.slice(0, -1)) },
+      { label: copyNow.keyboardClear, action: () => setKeyboardInputValue(activeKeyboardInput, "") },
+      { label: copyNow.keyboardDone, action: hidePixelKeyboard, done: true },
+    ].forEach((item) => {
+      const key = document.createElement("button");
+      key.type = "button";
+      key.className = `memory-pixel-key${item.wide ? " is-wide" : ""}${item.done ? " is-done" : ""}`;
+      key.textContent = item.label;
+      key.addEventListener("click", () => {
+        if (!activeKeyboardInput && !item.done) return;
+        item.action();
+        playInteractionSound(item.done ? "soft" : "click");
+      });
+      utilityRow.append(key);
+    });
+    keyboard.append(utilityRow);
+  }
 
   const px = (context, x, y, color) => {
     if (x < 0 || x >= 64 || y < 0 || y >= 64) return;
@@ -4433,6 +4528,7 @@ function createPixelMemoryGarden(stage, options = {}) {
     badge.textContent = `${plantedFlowers.length} ${state.language === "id" ? "bunga ditanam" : "flowers planted"}`;
     options.onPlant?.(lastPlanted);
     playPlantRevealSound();
+    hidePixelKeyboard();
     updateTip(state.language === "id"
       ? "Bungamu sudah masuk taman. Foto berikutnya bisa menanam bunga berikutnya."
       : "Your bloom has joined the garden. The next photo can plant the next flower.");
@@ -4485,6 +4581,7 @@ function createPixelMemoryGarden(stage, options = {}) {
     nextVisitorButton.hidden = true;
     nameInput.value = "";
     messageInput.value = "";
+    hidePixelKeyboard();
     updateTip();
   }
 
@@ -4520,6 +4617,7 @@ function createPixelMemoryGarden(stage, options = {}) {
   }
 
   buildAssets();
+  syncGardenInputLabels();
   resize();
   buildTray();
   updateTip();
@@ -4542,6 +4640,18 @@ function createPixelMemoryGarden(stage, options = {}) {
   saveButton.addEventListener("click", exportGarden);
   nameInput.addEventListener("input", () => {
     localStorage.setItem(GARDEN_STORAGE_KEYS.visitorName, nameInput.value.trim());
+  });
+  [nameInput, messageInput].forEach((input) => {
+    input.addEventListener("focus", () => showPixelKeyboard(input));
+    input.addEventListener("click", (event) => {
+      event.preventDefault();
+      showPixelKeyboard(input);
+    });
+    input.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      input.focus({ preventScroll: true });
+      showPixelKeyboard(input);
+    });
   });
   confirmButton.addEventListener("click", commitPendingPlant);
   nextVisitorButton.addEventListener("click", startNextVisitor);
@@ -5090,7 +5200,6 @@ function buildGardenPlantScene(section) {
       pendingFlower = flower;
       section.dataset.lastPlantedFlowerId = flower.flowerId;
       saveLastPlantedFlower(flower);
-      markFinalDirty();
       hideGuidanceHint();
       completeInteraction("gardenPlant");
       section.classList.add("has-planted");
@@ -5170,10 +5279,15 @@ function buildMarkFinalScene(section) {
   const actions = document.createElement("div");
   actions.className = "archive-mark-actions";
   const viewGarden = createArchiveButton(copy.viewGarden, "action action-secondary");
+  const replayPhoto = createArchiveButton(copy.replayPhoto, "action action-secondary");
   const finish = createArchiveButton(copy.returnBooth, "action action-primary");
   viewGarden.addEventListener("click", () => guardedNavigate(() => goToScene(archiveScenes.findIndex((scene) => scene.id === "gardenPlant"))));
+  replayPhoto.addEventListener("click", () => guardedNavigate(() => {
+    setView("final");
+    prepareFinalPreviewLoop();
+  }));
   finish.addEventListener("click", () => guardedNavigate(finishArchiveExperience));
-  actions.append(viewGarden, finish);
+  actions.append(viewGarden, replayPhoto, finish);
   copyBlock.append(footer, actions);
   card.append(frame, copyBlock);
   stage.append(card);
@@ -5317,6 +5431,8 @@ function buildTimelineScene(section) {
   let startX = 0;
   let startProgress = 0;
   let pathLength = 1;
+  let timelineFrame = 0;
+  let pendingTimelineProgress = 0;
 
   const easeProgress = (value) => value * value * (3 - 2 * value);
 
@@ -5383,8 +5499,17 @@ function buildTimelineScene(section) {
     }
   };
 
+  const scheduleTimelineProgress = (nextProgress) => {
+    pendingTimelineProgress = nextProgress;
+    if (timelineFrame) return;
+    timelineFrame = window.requestAnimationFrame(() => {
+      timelineFrame = 0;
+      updateProgress(pendingTimelineProgress);
+    });
+  };
+
   const updateTimelineFromDrag = (clientX) => {
-    updateProgress(startProgress + ((clientX - startX) / Math.max(240, stage.clientWidth)) * 1.32);
+    scheduleTimelineProgress(startProgress + ((clientX - startX) / Math.max(300, stage.clientWidth)) * 1.18);
   };
 
   const snapToNearestTracePoint = () => {
@@ -5401,6 +5526,7 @@ function buildTimelineScene(section) {
       if (target === stage && event.target.closest(".draggable-trace")) return;
       event.preventDefault();
       isDragging = true;
+      section.classList.add("is-dragging");
       startX = event.clientX;
       startProgress = progress;
       try {
@@ -5426,10 +5552,12 @@ function buildTimelineScene(section) {
   ["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
     stage.addEventListener(eventName, () => {
       isDragging = false;
+      section.classList.remove("is-dragging");
       snapToNearestTracePoint();
     });
     slider.addEventListener(eventName, () => {
       isDragging = false;
+      section.classList.remove("is-dragging");
       snapToNearestTracePoint();
     });
   });
@@ -5660,6 +5788,11 @@ function goToScene(index, options = {}) {
 }
 
 async function enterArchive(record = activeSessionRecord) {
+  if (!record?.id) {
+    syncArchiveAccess();
+    setView(hasCompletedPhotoSession() ? "final" : "home");
+    return;
+  }
   stopCamera();
   try {
     archiveRecords = await getArchiveRecords();
@@ -5890,6 +6023,10 @@ function setExportBusy(isBusy) {
 function continueToArchiveFromFinal(event) {
   event?.preventDefault();
   event?.stopPropagation();
+  if (!activeSessionRecord) {
+    scheduleGuidanceHint(400);
+    return;
+  }
   storyContinueButton.disabled = false;
   hideSaveConfirmation();
   guardedNavigate(() => enterArchive(activeSessionRecord), 650);
@@ -6374,7 +6511,7 @@ function refreshRenderedPreviews() {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=photobooth-91").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-92").catch(() => {});
   });
 }
 
@@ -6396,7 +6533,15 @@ homeView.addEventListener("pointerup", (event) => {
   }, 900);
 });
 glimpseButton?.addEventListener("click", startPhotoboothFromGlimpse);
-archiveButton?.addEventListener("click", () => enterArchive(activeSessionRecord));
+archiveButton?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  if (!activeSessionRecord?.id) {
+    syncArchiveAccess();
+    return;
+  }
+  guardedNavigate(() => enterArchive(activeSessionRecord), 650);
+});
 soundToggleButton.addEventListener("click", toggleSound);
 languageButtons.forEach((button) => {
   button.addEventListener("click", (event) => {
@@ -6433,7 +6578,11 @@ storyCloseButton?.addEventListener("click", () => guardedNavigate(finishArchiveE
 storyChaptersContainer.addEventListener("scroll", scheduleStoryParallax, { passive: true });
 confirmArchiveButton.addEventListener("click", () => {
   hideSaveConfirmation();
-  enterArchive(activeSessionRecord);
+  if (!activeSessionRecord?.id) {
+    syncArchiveAccess();
+    return;
+  }
+  guardedNavigate(() => enterArchive(activeSessionRecord), 650);
 });
 finishButton.addEventListener("click", startAgain);
 
@@ -6478,6 +6627,7 @@ appShell.addEventListener("pointerup", (event) => {
 
 drawFormatSamples();
 syncCameraStageRatio();
-applyLanguage("en");
+applyLanguage("id");
+syncArchiveAccess();
 scheduleGuidanceHint();
 refreshRenderedPreviews();
