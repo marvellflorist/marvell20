@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Bloom Garden</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="game" data-mood="morning">
+    <section class="scene" aria-label="Bloom Garden">
+      <div class="bg-layer bg-morning" aria-hidden="true"></div>
+      <div class="bg-layer bg-dusk" aria-hidden="true"></div>
+      <div class="bg-layer bg-night" aria-hidden="true"></div>
+      <div class="atmosphere atmosphere-back" aria-hidden="true"></div>
+      <div class="particles particles-back" aria-hidden="true"></div>
+      <section class="garden" aria-label="Interactive garden"></section>
+      <div class="particles particles-front" aria-hidden="true"></div>
+      <div class="atmosphere atmosphere-front" aria-hidden="true"></div>
+      <div class="light-overlay" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
+    </section>
+
+    <section class="ui-panel" aria-label="Choose and plant your flower">
+      <div class="panel-heading">
+        <p class="eyebrow">Bloom Garden</p>
+        <h1>Choose your bloom</h1>
+        <p class="instruction" id="instructionText">Tap an empty patch to plant your flower.</p>
+      </div>
+      <label class="name-field">
+        <span>Your name</span>
+        <input id="nameInput" type="text" maxlength="18" autocomplete="off" inputmode="text">
+      </label>
+      <div class="flower-picker" id="flowerPicker" aria-label="Flower choices"></div>
+      <div class="panel-footer">
+        <div class="selected-preview" id="selectedPreview">No bloom selected</div>
+        <div class="count" id="plantedCount">0 / 12 blooms</div>
+      </div>
+    </section>
+
+    <div class="tooltip" id="tooltip" role="status" hidden></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <button class="corner-reset" id="cornerReset" type="button" aria-label="Hidden reset area"></button>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

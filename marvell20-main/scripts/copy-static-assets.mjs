@@ -61,3 +61,4 @@ await Promise.all(files.map((file) => {
 await copyDirIfExists(join(projectRoot, "icons"), join(dist, "icons"), "icons");
 await copyDirIfExists(join(projectRoot, "vendor"), join(dist, "vendor"), "vendor");
 await copyDirIfExists(join(projectRoot, "assets"), join(dist, "assets"), "assets");
+await copyDirIfExists(join(projectRoot, "bloom-garden"), join(dist, "bloom-garden"), "bloom-garden");

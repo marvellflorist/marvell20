@@ -1,4 +1,5 @@
 const appShell = document.querySelector(".app-shell");
+const isPhotoboothHidden = false;
 const homeView = document.querySelector(".view-home");
 const beginButton = document.querySelector("#beginButton");
 const archiveButton = document.querySelector("#archiveButton");
@@ -77,6 +78,9 @@ const singleGifPaperSize = { width: 600, height: 900 };
 const maxExportScale = 2;
 const maxExportCanvasArea = 16000000;
 const finalImageQuality = 0.96;
+const cloudinaryImageQuality = 0.88;
+const cloudinaryMaxUploadArea = 8000000;
+const cloudinaryUploadTimeoutMs = 30000;
 const gifFrameDelayMs = 90;
 const maxGifFrames = 24;
 const stripGifSegmentDuration = 5;
@@ -254,20 +258,6 @@ const archiveScenes = [
     intent: "tap",
   },
   {
-    id: "bridgeFlower",
-    label: "Trace 03",
-    title: "The First Flower",
-    hint: "Read",
-    intent: "read",
-  },
-  {
-    id: "flowersOccasion",
-    label: "Trace 03",
-    title: "Flowers for Every Occasion",
-    hint: "Wait",
-    intent: "wait",
-  },
-  {
     id: "roomNotice",
     label: "Trace 04",
     title: "Look Around",
@@ -280,13 +270,6 @@ const archiveScenes = [
     title: "The Years That Carried the Name",
     hint: "Drag the years forward.",
     intent: "drag",
-  },
-  {
-    id: "flowerSelect",
-    label: "Trace 06",
-    title: "Choose a Flower",
-    hint: "Choose",
-    intent: "tap",
   },
   {
     id: "gardenPlant",
@@ -324,7 +307,7 @@ const boothCopy = {
     finalBody: "Your portrait is saved. Now continue into the memory garden around it.",
     savePhoto: "Save Photo",
     continueArchive: "Continue to Garden",
-    highQuality: "High Quality QR",
+    highQuality: "Scan",
     gif: "GIF",
     again: "Retake",
     saveAgain: "Save Photo",
@@ -415,34 +398,9 @@ const boothCopy = {
     timelineFinalLines: [
       "Twenty years is not only a number.",
       "It is time making something grow, change, and remain.",
+      "For every first hello, late apology, birthday, gathering, goodbye, and memory, Marvell Florist gave feeling a form.",
       "After twenty years, what remains is not only history. Something is still growing.",
     ],
-    bridgeTitle: "The First Flower",
-    bridgeLines: [
-      "The name became the first flower.",
-      "Not a flower held in a hand, but one kept by a family.",
-      "From that first bloom, many others followed.",
-      "Some were given for love.",
-      "Some for apology.",
-      "Some for goodbye.",
-      "Some simply to make a room feel less empty.",
-    ],
-    bridgeButton: "Flowers for every occasion",
-    occasionTitle: "Flowers for Every Occasion",
-    occasionLines: [
-      "For the first hello.",
-      "For the room waiting at home.",
-      "For the apology that arrived late.",
-      "For the birthday that almost passed quietly.",
-      "For the table where people gathered.",
-      "For love, when words were not enough.",
-      "For goodbye.",
-      "For memory.",
-      "For every time a feeling needed a form.",
-      "For 20 years, Marvell Florist has carried these moments.",
-    ],
-    occasionButton: "Enter the archive",
-    occasionReadyHint: "Enter the archive",
     plantFlowerButton: "Plant your flower",
     flowerSelectTitle: "Choose what you want to leave here.",
     flowerSelectSubtitle: "Each flower carries a different meaning.",
@@ -466,6 +424,7 @@ const boothCopy = {
     hintPaper: "Tap",
     hintFinal: "Tap",
     hintScan: "Scan",
+    scanIdle: "Press Scan to create your save link.",
     hintStory: "Tap to open the garden.",
     soundOn: "Pause sound",
     soundOff: "Play sound",
@@ -490,7 +449,7 @@ const boothCopy = {
     finalBody: "Portrait-mu sudah tersimpan. Sekarang lanjut ke taman kenangan di sekelilingnya.",
     savePhoto: "Simpan Foto",
     continueArchive: "Lanjut Ke Arsip",
-    highQuality: "QR Kualitas Tinggi",
+    highQuality: "Scan",
     gif: "GIF",
     again: "Ulangi",
     saveAgain: "Simpan Foto",
@@ -581,34 +540,9 @@ const boothCopy = {
     timelineFinalLines: [
       "Dua puluh tahun bukan hanya angka.",
       "Ia adalah waktu yang membuat sesuatu tumbuh, berubah, dan tetap tinggal.",
+      "Untuk sapaan pertama, maaf yang terlambat, ulang tahun, pertemuan, perpisahan, dan kenangan, Marvell Florist memberi bentuk pada rasa.",
       "Setelah dua puluh tahun, yang tersisa bukan hanya sejarah. Ada sesuatu yang masih tumbuh.",
     ],
-    bridgeTitle: "Bunga Pertama",
-    bridgeLines: [
-      "Nama itu menjadi bunga pertama.",
-      "Bukan bunga yang dipegang di tangan, tetapi yang dijaga oleh keluarga.",
-      "Dari bunga pertama itu, banyak bunga lain menyusul.",
-      "Ada yang diberikan untuk cinta.",
-      "Ada yang diberikan untuk maaf.",
-      "Ada yang diberikan untuk perpisahan.",
-      "Ada yang diberikan agar sebuah ruang terasa tidak terlalu kosong.",
-    ],
-    bridgeButton: "Bunga untuk setiap rasa",
-    occasionTitle: "Bunga Untuk Setiap Rasa",
-    occasionLines: [
-      "Untuk sapaan pertama.",
-      "Untuk ruang yang menunggu di rumah.",
-      "Untuk maaf yang datang terlambat.",
-      "Untuk ulang tahun yang hampir lewat diam-diam.",
-      "Untuk meja tempat orang berkumpul.",
-      "Untuk cinta, ketika kata tidak cukup.",
-      "Untuk perpisahan.",
-      "Untuk kenangan.",
-      "Untuk setiap kali sebuah rasa membutuhkan bentuk.",
-      "Selama 20 tahun, Marvell Florist membawa momen-momen itu.",
-    ],
-    occasionButton: "Masuk ke arsip",
-    occasionReadyHint: "Masuk ke arsip",
     plantFlowerButton: "Tanam bungamu",
     flowerSelectTitle: "Pilih apa yang ingin kamu tinggalkan di sini.",
     flowerSelectSubtitle: "Setiap bunga membawa makna yang berbeda.",
@@ -632,6 +566,7 @@ const boothCopy = {
     hintPaper: "Ketuk",
     hintFinal: "Ketuk",
     hintScan: "Scan",
+    scanIdle: "Tekan Scan untuk membuat tautan simpan.",
     hintStory: "Ketuk untuk membuka arsip.",
     soundOn: "Matikan suara",
     soundOff: "Nyalakan suara",
@@ -679,6 +614,10 @@ const state = {
 
 function getCopy(language = state.language) {
   return boothCopy[language] || boothCopy.en;
+}
+
+function getScanIdleText() {
+  return getCopy().scanIdle || "Press Scan to create your save link.";
 }
 
 function textFrom(value) {
@@ -881,7 +820,7 @@ function resetSession() {
   exportButton.textContent = copy.highQuality;
   airdropButton.textContent = copy.savePhoto;
   gifButton.textContent = copy.gif;
-  qrStatus.textContent = "Preparing high-quality link...";
+  qrStatus.textContent = getScanIdleText();
   qrCanvas.hidden = true;
   exportButton.disabled = false;
   airdropButton.disabled = false;
@@ -1445,6 +1384,61 @@ function playDustWipeSound() {
     source.connect(filter).connect(gain).connect(context.destination);
     source.start(now);
     source.stop(now + duration);
+  } catch (error) {
+    // Decorative sound only.
+  }
+}
+
+function playArchiveRevealSound() {
+  if (!state.audioUnlocked) return;
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = state.audioContext || new AudioContextClass();
+    state.audioContext = context;
+    if (context.state === "suspended") context.resume();
+    const now = context.currentTime;
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(1900, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.034, now + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+    [440, 660, 990].forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      oscillator.type = index === 0 ? "triangle" : "sine";
+      oscillator.frequency.setValueAtTime(frequency, now + index * 0.035);
+      oscillator.connect(filter);
+      oscillator.start(now + index * 0.035);
+      oscillator.stop(now + 0.55);
+    });
+    filter.connect(gain).connect(context.destination);
+  } catch (error) {
+    // Decorative sound only.
+  }
+}
+
+function playArchiveTapSound() {
+  if (!state.audioUnlocked) return;
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = state.audioContext || new AudioContextClass();
+    state.audioContext = context;
+    if (context.state === "suspended") context.resume();
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(520, now);
+    oscillator.frequency.exponentialRampToValueAtTime(360, now + 0.09);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.026, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + 0.13);
   } catch (error) {
     // Decorative sound only.
   }
@@ -2622,7 +2616,7 @@ async function renderArchiveNoiseMontage(record) {
 async function showFinal() {
   if (!state.selectedPaper) return;
   qrCanvas.hidden = true;
-  qrStatus.textContent = "Preparing high-quality link...";
+  qrStatus.textContent = getScanIdleText();
   const record = await prepareFinalSession();
   updateTraceLabel(record);
   setView("final");
@@ -2853,10 +2847,7 @@ function getArchiveSceneTitle(scene) {
   const titles = {
     gate: copy.memoryGardenTitle,
     name: copy.nameTitle,
-    bridgeFlower: copy.bridgeTitle,
-    flowersOccasion: copy.occasionTitle,
     timeline: copy.timelineTitle,
-    flowerSelect: copy.flowerSelectTitle,
     gardenPlant: copy.plantingTitle,
     markFinal: copy.finalMarkTitle,
     montage: copy.traceTitle,
@@ -2870,11 +2861,8 @@ function getArchiveSceneHint(scene) {
     gate: copy.hintStory,
     nameIntro: copy.nameIntroHint,
     name: copy.nameTap,
-    bridgeFlower: copy.readPrompt,
-    flowersOccasion: copy.waitPrompt,
     roomNotice: copy.lookPrompt,
     timeline: copy.timelineHint,
-    flowerSelect: copy.selectPrompt,
     gardenPlant: copy.plantPrompt,
     markFinal: copy.done,
     montage: copy.done,
@@ -2947,7 +2935,17 @@ function unlockScene() {
   active?.classList.add("is-unlocked");
   showNextButton();
   playInteractionSound("soft");
-  scheduleGuidanceHint(900);
+  hideGuidanceHint();
+}
+
+function setArchiveActionTitle(section, text) {
+  const title = section?.querySelector(".archive-action-title, .archive-action-caption");
+  if (!title) return;
+  title.textContent = text || "";
+}
+
+function shouldUseLargeActionTitle(scene) {
+  return scene?.id === "nameIntro";
 }
 
 function buildArchiveScene(scene, index) {
@@ -2957,12 +2955,14 @@ function buildArchiveScene(scene, index) {
   section.dataset.sceneId = scene.id;
   section.dataset.hint = getArchiveSceneHint(scene);
   section.dataset.intent = scene.intent;
+  const actionTitle = document.createElement("div");
+  actionTitle.className = shouldUseLargeActionTitle(scene) ? "archive-action-title" : "archive-action-caption";
+  actionTitle.textContent = section.dataset.hint;
+  section.append(actionTitle);
 
   if (scene.id === "gate") buildGateScene(section, index);
   if (scene.id === "nameIntro") buildNameIntroScene(section, index);
   if (scene.id === "name") buildNameScene(section, index);
-  if (scene.id === "bridgeFlower") buildBridgeFlowerScene(section, index);
-  if (scene.id === "flowersOccasion") buildFlowersOccasionScene(section, index);
   if (scene.id === "roomNotice") buildRoomNoticeScene(section, index);
   if (scene.id === "hands") buildHandsScene(section, index);
   if (scene.id === "papan") buildPapanScene(section, index);
@@ -2970,14 +2970,13 @@ function buildArchiveScene(scene, index) {
   if (scene.id === "arrangements") buildArrangementsScene(section, index);
   if (scene.id === "room") buildRoomScene(section, index);
   if (scene.id === "timeline") buildTimelineScene(section, index);
-  if (scene.id === "flowerSelect") buildFlowerSelectScene(section, index);
   if (scene.id === "gardenPlant") buildGardenPlantScene(section, index);
   if (scene.id === "markFinal") buildMarkFinalScene(section, index);
   if (scene.id === "montage") buildMontageScene(section, index);
   if (scene.id === "epilogue") buildEpilogueScene(section, index);
 
   if (scene.id === "timeline") addArchiveNext(section, index, getCopy().plantFlowerButton);
-  if (!["nameIntro", "bridgeFlower", "flowersOccasion", "roomNotice", "timeline", "flowerSelect", "gardenPlant", "markFinal", "montage", "epilogue"].includes(scene.id)) addArchiveNext(section, index);
+  if (!["nameIntro", "roomNotice", "timeline", "gardenPlant", "markFinal", "montage", "epilogue"].includes(scene.id)) addArchiveNext(section, index);
   return section;
 }
 
@@ -3041,6 +3040,7 @@ function buildNameScene(section) {
   letterCopy.append(beatList);
   const cue = createArchiveButton(copy.nameTap, "archive-open-button archive-tap-through");
   const hitbox = createArchiveButton("Buka surat", "archive-name-hitbox");
+  hitbox.dataset.guide = state.language === "id" ? "Ketuk surat" : "Tap the letter";
   letterCopy.append(cue);
   stage.append(stack, hitbox);
   section.append(stage);
@@ -3051,6 +3051,7 @@ function buildNameScene(section) {
     if (section.classList.contains("is-opened")) return;
     if (beatIndex >= beats.length) return;
     hideGuidanceHint();
+    playArchiveTapSound();
     const cards = stack.querySelectorAll(".archive-memory-card");
     cards[Math.min(beatIndex, cards.length - 1)]?.classList.add("is-visible");
     beatList.children[beatIndex]?.classList.add("is-visible");
@@ -3102,6 +3103,7 @@ function buildNameIntroScene(section) {
   text.append(first, second);
 
   const hitbox = createArchiveButton(copy.nameIntroHint, "archive-name-intro-hitbox");
+  hitbox.dataset.guide = copy.nameIntroHint;
   stage.append(polaroid, text, hitbox);
   section.append(stage);
 
@@ -3111,6 +3113,14 @@ function buildNameIntroScene(section) {
   let introStep = 0;
   let fogContext = null;
   let lastDustSoundAt = 0;
+  const wipeGrid = { columns: 28, rows: 36, wiped: new Set() };
+  let dustImage = null;
+  if (dust?.src) {
+    dustImage = new Image();
+    dustImage.decoding = "async";
+    dustImage.onload = () => drawFog();
+    dustImage.src = dust.src;
+  }
 
   const drawFog = () => {
     const rect = polaroid.getBoundingClientRect();
@@ -3123,16 +3133,26 @@ function buildNameIntroScene(section) {
     if (!fogContext) return;
     fogContext.setTransform(ratio, 0, 0, ratio, 0, 0);
     fogContext.globalCompositeOperation = "source-over";
-    fogContext.fillStyle = "rgba(226, 226, 222, 0.16)";
+    const dustyBase = fogContext.createLinearGradient(0, 0, rect.width, rect.height);
+    dustyBase.addColorStop(0, "rgba(255, 255, 248, 0.5)");
+    dustyBase.addColorStop(0.42, "rgba(222, 220, 210, 0.34)");
+    dustyBase.addColorStop(1, "rgba(255, 252, 238, 0.42)");
+    fogContext.fillStyle = dustyBase;
     fogContext.fillRect(0, 0, rect.width, rect.height);
-    fogContext.fillStyle = "rgba(255, 255, 255, 0.14)";
-    for (let index = 0; index < 180; index += 1) {
-      const x = (index * 47 + 19) % rect.width;
-      const y = (index * 83 + 31) % rect.height;
-      fogContext.beginPath();
-      fogContext.arc(x, y, 0.8 + (index % 5) * 0.42, 0, Math.PI * 2);
-      fogContext.fill();
+    if (dustImage?.complete && dustImage.naturalWidth > 0) {
+      const pattern = fogContext.createPattern(dustImage, "repeat");
+      if (pattern) {
+        fogContext.save();
+        fogContext.globalAlpha = 0.64;
+        fogContext.fillStyle = pattern;
+        fogContext.fillRect(0, 0, rect.width, rect.height);
+        fogContext.restore();
+      }
     }
+    fogContext.fillStyle = "rgba(255, 255, 255, 0.26)";
+    fogContext.fillRect(0, 0, rect.width, rect.height);
+    wipeProgress = 0;
+    wipeGrid.wiped.clear();
   };
 
   const revealAt = (event) => {
@@ -3141,22 +3161,44 @@ function buildNameIntroScene(section) {
     const rect = fog.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
+    if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
+    const brushRadius = Math.max(42, Math.min(rect.width, rect.height) * 0.13);
     fogContext.globalCompositeOperation = "destination-out";
     fogContext.beginPath();
-    fogContext.arc(x, y, Math.max(56, Math.min(rect.width, rect.height) * 0.16), 0, Math.PI * 2);
+    fogContext.arc(x, y, brushRadius, 0, Math.PI * 2);
     fogContext.fill();
     const now = performance.now();
     if (now - lastDustSoundAt > 240) {
       lastDustSoundAt = now;
       playDustWipeSound();
     }
-    wipeProgress = Math.min(1, wipeProgress + 0.08);
-    if (wipeProgress >= 0.5 && !hasTriggeredHalfReveal) {
+    const cellWidth = rect.width / wipeGrid.columns;
+    const cellHeight = rect.height / wipeGrid.rows;
+    const startColumn = Math.max(0, Math.floor((x - brushRadius) / cellWidth));
+    const endColumn = Math.min(wipeGrid.columns - 1, Math.ceil((x + brushRadius) / cellWidth));
+    const startRow = Math.max(0, Math.floor((y - brushRadius) / cellHeight));
+    const endRow = Math.min(wipeGrid.rows - 1, Math.ceil((y + brushRadius) / cellHeight));
+    for (let row = startRow; row <= endRow; row += 1) {
+      for (let column = startColumn; column <= endColumn; column += 1) {
+        const centerX = (column + 0.5) * cellWidth;
+        const centerY = (row + 0.5) * cellHeight;
+        if (Math.hypot(centerX - x, centerY - y) <= brushRadius) {
+          wipeGrid.wiped.add(`${column}:${row}`);
+        }
+      }
+    }
+    wipeProgress = wipeGrid.wiped.size / (wipeGrid.columns * wipeGrid.rows);
+    if (wipeProgress >= 0.78 && !hasTriggeredHalfReveal) {
       hasTriggeredHalfReveal = true;
       section.classList.add("is-revealed");
+      section.classList.add("is-awaiting-next-action");
       fog.style.pointerEvents = "none";
       first.classList.add("is-visible");
-      scheduleGuidanceHint(900);
+      hitbox.textContent = copy.tapPrompt;
+      hitbox.dataset.guide = copy.tapPrompt;
+      setArchiveActionTitle(section, copy.tapPrompt);
+      hideGuidanceHint();
+      playArchiveRevealSound();
     }
   };
 
@@ -3166,10 +3208,12 @@ function buildNameIntroScene(section) {
     if (introStep === 0) {
       second.classList.add("is-visible");
       introStep = 1;
-      playInteractionSound("soft");
+      playArchiveTapSound();
       return;
     }
+    section.classList.remove("is-awaiting-next-action");
     section.classList.add("is-opened");
+    playArchiveTapSound();
     queueSceneTimer(() => guardedNavigate(() => goToScene(state.currentScene + 1), 650), 520);
   };
 
@@ -3437,7 +3481,12 @@ function buildStoreScene(section) {
   if (after) wipe.append(after);
   const handle = document.createElement("span");
   handle.className = "archive-wipe-handle";
+  handle.dataset.guide = state.language === "id" ? "Geser" : "Swipe";
+  const wipeGuide = document.createElement("span");
+  wipeGuide.className = "archive-wipe-guide";
+  wipeGuide.textContent = state.language === "id" ? "Geser garisnya" : "Swipe the line";
   wipe.append(handle);
+  wipe.append(wipeGuide);
   section.append(wipe);
 
   let isDragging = false;
@@ -3573,6 +3622,7 @@ function buildRoomNoticeScene(section) {
     text.append(paragraph);
   });
   const hitbox = createArchiveButton(copy.tapPrompt, "archive-room-notice-hitbox");
+  hitbox.dataset.guide = copy.tapPrompt;
   stage.append(text, hitbox);
   section.append(stage);
 
@@ -3603,6 +3653,11 @@ function createCssFlower(flower = FLOWERS[0], className = "") {
   const wrap = document.createElement("span");
   wrap.className = ["css-flower", flower.cssClass, className].filter(Boolean).join(" ");
   wrap.style.setProperty("--flower-color", flower.color);
+  appendFallbackCssFlowerParts(wrap, flower);
+  return wrap;
+}
+
+function appendFallbackCssFlowerParts(wrap, flower = FLOWERS[0]) {
   const stem = document.createElement("span");
   stem.className = "css-flower-stem";
   const bloom = document.createElement("span");
@@ -3619,7 +3674,6 @@ function createCssFlower(flower = FLOWERS[0], className = "") {
   core.className = "css-flower-core";
   bloom.append(core);
   wrap.append(stem, bloom);
-  return wrap;
 }
 
 function createFlowerVariation() {
@@ -3681,118 +3735,6 @@ function openPlantedFlowerPanel(section, flowerId) {
       panel.append(item);
     });
   section.querySelector(".archive-garden-stage")?.append(panel);
-}
-
-function buildBridgeFlowerScene(section) {
-  const copy = getCopy();
-  const stage = document.createElement("div");
-  stage.className = "archive-flower-bridge";
-  const vine = document.createElement("span");
-  vine.className = "archive-flower-bridge-line";
-  const bloom = createCssFlower(FLOWERS[0], "archive-flower-bridge-bloom");
-  const copyBlock = appendSceneCopy(stage, {
-    kicker: "Trace 03",
-    title: copy.bridgeTitle,
-    lines: copy.bridgeLines || [],
-    className: "archive-flower-bridge-copy",
-  });
-  const button = createArchiveButton(copy.bridgeButton, "archive-flower-bridge-button");
-  button.addEventListener("click", () => {
-    hideGuidanceHint();
-    guardedNavigate(() => goToScene(state.currentScene + 1));
-  });
-  copyBlock.append(button);
-  stage.append(vine, bloom);
-  section.append(stage);
-}
-
-function buildFlowersOccasionScene(section) {
-  const copy = getCopy();
-  const stage = document.createElement("div");
-  stage.className = "archive-occasion-stage";
-  const imageLayer = document.createElement("div");
-  imageLayer.className = "archive-occasion-image-layer";
-  getStoryAssetList("occasionImages").forEach((asset, imageIndex) => {
-    const figure = createArchiveFigure(asset, { className: "archive-occasion-image", placeholder: false });
-    if (!figure) return;
-    figure.style.setProperty("--occasion-image-index", imageIndex);
-    imageLayer.append(figure);
-  });
-  const petals = document.createElement("div");
-  petals.className = "archive-occasion-particles";
-  for (let index = 0; index < 18; index += 1) {
-    const petal = document.createElement("span");
-    petal.style.setProperty("--particle-index", index);
-    petals.append(petal);
-  }
-  const title = document.createElement("h3");
-  title.textContent = copy.occasionTitle;
-  const line = document.createElement("p");
-  line.className = "archive-occasion-line";
-  const controls = document.createElement("div");
-  controls.className = "archive-occasion-actions";
-  const skip = createArchiveButton(copy.occasionButton, "archive-occasion-button");
-  skip.disabled = true;
-  skip.hidden = true;
-  controls.append(skip);
-  stage.append(imageLayer, petals, title, line, controls);
-  section.append(stage);
-
-  let occasionLineIndex = 0;
-  let occasionTransitionLocked = false;
-  let occasionFinished = false;
-  const lines = copy.occasionLines || [];
-  const revealArchiveButton = () => {
-    occasionFinished = true;
-    section.classList.add("is-complete");
-    section.dataset.hint = copy.occasionReadyHint || copy.occasionButton;
-    section.dataset.intent = "tap";
-    skip.hidden = false;
-    skip.disabled = false;
-    scheduleGuidanceHint(300);
-  };
-  const showLine = (nextIndex) => {
-    if (archiveScenes[state.currentScene]?.id !== "flowersOccasion") return;
-    if (!lines.length) {
-      revealArchiveButton();
-      return;
-    }
-    const boundedIndex = Math.max(0, Math.min(lines.length - 1, nextIndex));
-    occasionLineIndex = boundedIndex;
-    occasionTransitionLocked = true;
-    line.classList.remove("is-visible");
-    queueSceneTimer(() => {
-      line.textContent = lines[occasionLineIndex] || "";
-      line.classList.add("is-visible");
-      queueSceneTimer(() => {
-        occasionTransitionLocked = false;
-        if (occasionLineIndex >= lines.length - 1) revealArchiveButton();
-      }, 220);
-    }, line.textContent ? 150 : 40);
-  };
-  const advanceLine = () => {
-    if (occasionTransitionLocked || occasionFinished) return;
-    showLine(occasionLineIndex + 1);
-  };
-
-  section.startOccasionSequence = () => {
-    if (section.classList.contains("is-started")) return;
-    section.classList.add("is-started");
-    section.dataset.hint = copy.tapPrompt;
-    section.dataset.intent = "tap";
-    showLine(0);
-    scheduleGuidanceHint(900);
-  };
-
-  skip.addEventListener("click", () => {
-    if (!section.classList.contains("is-complete")) return;
-    hideGuidanceHint();
-    guardedNavigate(() => goToScene(state.currentScene + 1));
-  });
-  section.addEventListener("click", (event) => {
-    if (event.target.closest(".archive-occasion-button")) return;
-    advanceLine();
-  });
 }
 
 function buildFlowerSelectScene(section) {
@@ -3881,11 +3823,756 @@ function playPlantRevealSound() {
   }
 }
 
+const PIXEL_GARDEN_STORAGE_KEY = "marvell_garden_v2";
+const PIXEL_GARDEN_SETTINGS = {
+  day: {
+    sky: [["#88d4da", "#b9eadc", "#eef7dc", "#b4d98a"], [0, 0.34, 0.68, 1]],
+    sun: { x: 0.7, y: 0.16, color: "#fff2bc", glow: "rgba(255,232,154,0.32)" },
+    moon: null,
+    stars: false,
+    grass: ["#4f9d45", "#2f6d2c", "#8fc76a", "#5a9f4e"],
+    fog: "rgba(170,230,200,0.12)",
+    tint: [0.96, 1.04, 0.9],
+  },
+  dusk: {
+    sky: [["#201936", "#67375c", "#bd5f56", "#e8a65f", "#f3d59b"], [0, 0.26, 0.56, 0.8, 1]],
+    sun: { x: 0.82, y: 0.7, color: "#f1c365", glow: "rgba(255,174,88,0.46)" },
+    moon: null,
+    stars: true,
+    grass: ["#315c2b", "#1d351c", "#5f8237", "#314d24"],
+    fog: "rgba(156,76,96,0.16)",
+    tint: [1.08, 0.82, 0.66],
+  },
+  night: {
+    sky: [["#020609", "#061320", "#092642", "#0d3b4c"], [0, 0.3, 0.7, 1]],
+    sun: null,
+    moon: { x: 0.28, y: 0.14, r: 28 },
+    stars: true,
+    grass: ["#12371f", "#0a2415", "#245335", "#12321f"],
+    fog: "rgba(32,120,142,0.2)",
+    tint: [0.62, 0.82, 1.08],
+  },
+};
+
+const PIXEL_GARDEN_FLOWERS = [
+  { id: "rose", label: "Rose", petals: 5, petalColor: "#d9435c", coreColor: "#ffd4d0", stemColor: "#2d7f42", leafColor: "#4fa85e" },
+  { id: "orchid", label: "Orchid", petals: 5, petalColor: "#a66bd2", coreColor: "#f4d7ff", stemColor: "#2d7142", leafColor: "#5fb364" },
+  { id: "carnation", label: "Carnation", petals: 8, petalColor: "#e8758d", coreColor: "#ffdbe2", stemColor: "#2c874c", leafColor: "#5aba65" },
+  { id: "anthurium", label: "Anthurium", petals: 1, petalColor: "#c9473d", coreColor: "#f5e8a7", stemColor: "#2c7043", leafColor: "#57aa5f" },
+  { id: "lily", label: "Lily", petals: 6, petalColor: "#f7f0d8", coreColor: "#f1cf75", stemColor: "#26723e", leafColor: "#4f9d5b" },
+  { id: "tulip", label: "Tulip", petals: 3, petalColor: "#e88954", coreColor: "#ffe0bd", stemColor: "#2a8248", leafColor: "#55a965" },
+  { id: "chrysanthemum", label: "Chrysanth.", petals: 12, petalColor: "#e0c84e", coreColor: "#fff6cb", stemColor: "#2f7541", leafColor: "#58a853" },
+  { id: "hydrangea", label: "Hydrangea", petals: 4, petalColor: "#6f9fd5", coreColor: "#d9ecff", stemColor: "#256b4f", leafColor: "#4ea96d" },
+];
+
+function createPixelMemoryGarden(stage, options = {}) {
+  const copy = getCopy();
+  const root = document.createElement("div");
+  root.className = "memory-garden-game";
+  root.innerHTML = `
+    <canvas class="memory-garden-sky" aria-hidden="true"></canvas>
+    <canvas class="memory-garden-canvas" aria-label="Memory Garden"></canvas>
+    <div class="memory-garden-switcher">
+      <button type="button" class="active" data-setting="day">Day</button>
+      <button type="button" data-setting="dusk">Dusk</button>
+      <button type="button" data-setting="night">Night</button>
+    </div>
+    <div class="memory-garden-badge" aria-live="polite"></div>
+    <button type="button" class="memory-garden-save">Save Garden</button>
+    <div class="memory-garden-visitor">
+      <label>Your name <input class="memory-garden-name" maxlength="18" autocomplete="off"></label>
+      <label>Message <input class="memory-garden-message" maxlength="54" autocomplete="off"></label>
+      <button type="button" class="memory-garden-confirm" disabled>Confirm planting</button>
+      <button type="button" class="memory-garden-next-visitor" hidden>Take next photo</button>
+    </div>
+    <div class="memory-garden-tray"></div>
+    <div class="memory-garden-tip" role="status" aria-live="polite"></div>
+    <div class="memory-garden-tooltip" hidden></div>
+  `;
+  stage.append(root);
+
+  const skyCanvas = root.querySelector(".memory-garden-sky");
+  const gameCanvas = root.querySelector(".memory-garden-canvas");
+  const skyCtx = skyCanvas.getContext("2d");
+  const gameCtx = gameCanvas.getContext("2d");
+  const tray = root.querySelector(".memory-garden-tray");
+  const tip = root.querySelector(".memory-garden-tip");
+  const tooltip = root.querySelector(".memory-garden-tooltip");
+  const badge = root.querySelector(".memory-garden-badge");
+  const saveButton = root.querySelector(".memory-garden-save");
+  const nameInput = root.querySelector(".memory-garden-name");
+  const messageInput = root.querySelector(".memory-garden-message");
+  const confirmButton = root.querySelector(".memory-garden-confirm");
+  const nextVisitorButton = root.querySelector(".memory-garden-next-visitor");
+  const assetCache = {};
+  const stars = Array.from({ length: 120 }, () => ({
+    x: Math.random(), y: Math.random() * 0.55, r: 0.5 + Math.random() * 1.5,
+    phase: Math.random() * Math.PI * 2, twinkle: 0.003 + Math.random() * 0.008,
+  }));
+  const fireflies = Array.from({ length: 30 }, () => ({
+    x: Math.random(), y: 0.45 + Math.random() * 0.45, phase: Math.random() * Math.PI * 2,
+    speed: 0.004 + Math.random() * 0.006, drift: (Math.random() - 0.5) * 0.0003, amp: 0.02 + Math.random() * 0.04,
+  }));
+  fireflies.forEach((firefly) => { firefly.baseY = firefly.y; });
+
+  let width = 1;
+  let height = 1;
+  let scale = 2;
+  let grassY = 0;
+  let skyTime = 0;
+  let setting = "day";
+  let selectedFlower = PIXEL_GARDEN_FLOWERS.find((flower) => flower.id === getSelectedFlower().id) || PIXEL_GARDEN_FLOWERS[0];
+  let plantedFlowers = [];
+  let pendingPlant = null;
+  let session = getMemoryGardenSession(options.photoId);
+  let animationFrame = 0;
+  let isDestroyed = false;
+  nameInput.value = localStorage.getItem(GARDEN_STORAGE_KEYS.visitorName) || "";
+
+  const px = (context, x, y, color) => {
+    if (x < 0 || x >= 64 || y < 0 || y >= 64) return;
+    context.fillStyle = color;
+    context.fillRect(Math.round(x), Math.round(y), 1, 1);
+  };
+  const darken = (hex, factor) => {
+    const red = parseInt(hex.slice(1, 3), 16);
+    const green = parseInt(hex.slice(3, 5), 16);
+    const blue = parseInt(hex.slice(5, 7), 16);
+    return `#${Math.round(red * factor).toString(16).padStart(2, "0")}${Math.round(green * factor).toString(16).padStart(2, "0")}${Math.round(blue * factor).toString(16).padStart(2, "0")}`;
+  };
+  const darkenColor = (color) => {
+    const match = color.match(/\d+/g);
+    if (!match) return color;
+    return `rgb(${Math.round(Number(match[0]) * 0.65)},${Math.round(Number(match[1]) * 0.65)},${Math.round(Number(match[2]) * 0.65)})`;
+  };
+  const lightenColor = (color) => {
+    const match = color.match(/\d+/g);
+    if (!match) return color;
+    return `rgb(${Math.min(255, Math.round(Number(match[0]) * 1.4))},${Math.min(255, Math.round(Number(match[1]) * 1.4))},${Math.min(255, Math.round(Number(match[2]) * 1.4))})`;
+  };
+  const hexToRgba = (hex, alpha) => {
+    const red = parseInt(hex.slice(1, 3), 16);
+    const green = parseInt(hex.slice(3, 5), 16);
+    const blue = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${red},${green},${blue},${alpha})`;
+  };
+  const tintColor = (hex, tint) => {
+    const red = parseInt(hex.slice(1, 3), 16);
+    const green = parseInt(hex.slice(3, 5), 16);
+    const blue = parseInt(hex.slice(5, 7), 16);
+    return `rgb(${Math.min(255, Math.round(red * tint[0]))},${Math.min(255, Math.round(green * tint[1]))},${Math.min(255, Math.round(blue * tint[2]))})`;
+  };
+
+  function drawGenericFlower(context, cx, cy, numPetals, petalColor, darkPetal, coreColor, id) {
+    const petalLength = id === "orchid" ? 13 : 11;
+    for (let petalIndex = 0; petalIndex < numPetals; petalIndex += 1) {
+      const angle = (petalIndex / numPetals) * Math.PI * 2 - Math.PI / 2;
+      for (let dx = -5; dx <= 5; dx += 1) {
+        for (let dy = -7; dy <= 7; dy += 1) {
+          const ex = cx + Math.cos(angle) * (petalLength * 0.5) + Math.cos(angle + Math.PI / 2) * dx * 0.6 + Math.sin(angle + Math.PI / 2) * dy * 0.1;
+          const ey = cy + Math.sin(angle) * (petalLength * 0.5) + Math.sin(angle + Math.PI / 2) * dx * 0.6 - Math.cos(angle + Math.PI / 2) * dy * 0.1;
+          const distance = Math.sqrt((dx * dx) / 16 + (dy * dy) / 49);
+          if (distance <= 1) px(context, ex, ey, distance > 0.7 ? darkPetal : petalColor);
+        }
+      }
+    }
+    for (let dx = -5; dx <= 5; dx += 1) {
+      for (let dy = -5; dy <= 5; dy += 1) {
+        if (dx * dx + dy * dy <= 25) px(context, cx + dx, cy + dy, dx * dx + dy * dy <= 9 ? "#ffffff" : coreColor);
+      }
+    }
+  }
+
+  function drawTulip(context, cx, cy, petalColor, darkPetal) {
+    for (let dx = -8; dx <= 8; dx += 1) {
+      for (let dy = -10; dy <= 4; dy += 1) {
+        const nx = dx / 8;
+        const ny = dy / 10;
+        if (Math.abs(nx) < 1 - Math.max(0, ny) * 0.4 && ny > -1) px(context, cx + dx, cy + dy, Math.abs(nx) > 0.75 || ny > 0.6 ? darkPetal : petalColor);
+      }
+    }
+    for (let dy = -8; dy <= 2; dy += 1) {
+      px(context, cx, cy + dy, lightenColor(petalColor));
+      px(context, cx - 1, cy + dy, lightenColor(petalColor));
+    }
+  }
+
+  function drawAnthurium(context, cx, cy, petalColor, darkPetal, coreColor) {
+    for (let dx = -12; dx <= 12; dx += 1) {
+      for (let dy = -12; dy <= 10; dy += 1) {
+        const nx = dx / 12;
+        const ny = dy / 12;
+        if ((nx * nx + (ny - Math.abs(nx) * 0.5) ** 2) < 1.1 && ny < 0.85) px(context, cx + dx, cy + dy, Math.abs(nx) > 0.8 || ny > 0.65 ? darkPetal : petalColor);
+      }
+    }
+    for (let index = 0; index < 14; index += 1) {
+      px(context, cx + 5, cy - 10 + index, coreColor);
+      px(context, cx + 6, cy - 10 + index, darkenColor(coreColor));
+    }
+  }
+
+  function drawLily(context, cx, cy, petalColor, darkPetal, coreColor) {
+    for (let petalIndex = 0; petalIndex < 6; petalIndex += 1) {
+      const angle = (petalIndex / 6) * Math.PI * 2 - Math.PI / 2;
+      for (let step = 0; step < 14; step += 1) {
+        const spread = Math.sin((step / 14) * Math.PI) * 4;
+        for (let side = -spread; side <= spread; side += 1) {
+          px(context, cx + Math.cos(angle) * step + Math.cos(angle + Math.PI / 2) * side, cy + Math.sin(angle) * step + Math.sin(angle + Math.PI / 2) * side, Math.abs(side) > spread * 0.75 || step > 11 ? darkPetal : petalColor);
+        }
+      }
+    }
+    for (let dx = -3; dx <= 3; dx += 1) for (let dy = -3; dy <= 3; dy += 1) if (dx * dx + dy * dy <= 9) px(context, cx + dx, cy + dy, coreColor);
+  }
+
+  function drawChrysanthemum(context, cx, cy, petalColor, darkPetal, coreColor) {
+    for (let petalIndex = 0; petalIndex < 16; petalIndex += 1) {
+      const angle = (petalIndex / 16) * Math.PI * 2;
+      for (let radius = 4; radius < 14; radius += 1) px(context, cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius, radius > 11 ? darkPetal : petalColor);
+    }
+    for (let dx = -4; dx <= 4; dx += 1) for (let dy = -4; dy <= 4; dy += 1) if (dx * dx + dy * dy <= 16) px(context, cx + dx, cy + dy, dx * dx + dy * dy <= 6 ? "#ffffff" : coreColor);
+  }
+
+  function drawHydrangea(context, cx, cy, petalColor, darkPetal) {
+    [[0, -9], [8, -5], [-8, -5], [0, 5], [9, 3], [-9, 3], [4, -13], [-4, -13]].forEach(([fx, fy]) => {
+      for (let petalIndex = 0; petalIndex < 4; petalIndex += 1) {
+        const angle = (petalIndex / 4) * Math.PI * 2;
+        for (let radius = 1; radius <= 4; radius += 1) px(context, cx + fx + Math.cos(angle) * radius, cy + fy + Math.sin(angle) * radius, radius > 3 ? darkPetal : petalColor);
+      }
+      px(context, cx + fx, cy + fy, "#ffffff");
+    });
+  }
+
+  function drawFlowerPixel(flower, frame, settingKey) {
+    const activeSetting = PIXEL_GARDEN_SETTINGS[settingKey];
+    const canvas = document.createElement("canvas");
+    canvas.width = 64;
+    canvas.height = 64;
+    const context = canvas.getContext("2d");
+    context.imageSmoothingEnabled = false;
+    const petalColor = tintColor(flower.petalColor, activeSetting.tint);
+    const coreColor = tintColor(flower.coreColor, activeSetting.tint);
+    const stemColor = tintColor(flower.stemColor, activeSetting.tint);
+    const leafColor = tintColor(flower.leafColor, activeSetting.tint);
+    const darkPetal = tintColor(darken(flower.petalColor, 0.6), activeSetting.tint);
+    const darkStem = tintColor(darken(flower.stemColor, 0.6), activeSetting.tint);
+    const lean = frame === 0 ? 1 : -1;
+    for (let y = 22; y < 58; y += 1) {
+      const x = Math.round(32 + lean * (y - 22) * 0.1);
+      px(context, x, y, stemColor);
+      px(context, x + 1, y, darkStem);
+    }
+    const leafY = 42;
+    const leafX = Math.round(32 + lean * (leafY - 22) * 0.1);
+    for (let index = 0; index < 8; index += 1) px(context, leafX - index, leafY + index - 4, leafColor);
+    for (let index = 0; index < 7; index += 1) px(context, leafX + index + 2, leafY + index - 6, leafColor);
+    const hx = Math.round(32 + lean * 2);
+    const hy = 20;
+    if (flower.id === "anthurium") drawAnthurium(context, hx, hy, petalColor, darkPetal, coreColor);
+    else if (flower.id === "tulip") drawTulip(context, hx, hy, petalColor, darkPetal, coreColor);
+    else if (flower.id === "chrysanthemum") drawChrysanthemum(context, hx, hy, petalColor, darkPetal, coreColor);
+    else if (flower.id === "hydrangea") drawHydrangea(context, hx, hy, petalColor, darkPetal, coreColor);
+    else if (flower.id === "lily") drawLily(context, hx, hy, petalColor, darkPetal, coreColor);
+    else drawGenericFlower(context, hx, hy, flower.petals, petalColor, darkPetal, coreColor, flower.id);
+    return canvas;
+  }
+
+  function buildAssets() {
+    PIXEL_GARDEN_FLOWERS.forEach((flower) => {
+      Object.keys(PIXEL_GARDEN_SETTINGS).forEach((settingKey) => {
+        [0, 1].forEach((frame) => {
+          assetCache[`${flower.id}_${settingKey}_${frame}`] = drawFlowerPixel(flower, frame, settingKey);
+        });
+      });
+    });
+  }
+
+  function resize() {
+    const rect = root.getBoundingClientRect();
+    width = Math.max(1, Math.round(rect.width));
+    height = Math.max(1, Math.round(rect.height));
+    skyCanvas.width = gameCanvas.width = width;
+    skyCanvas.height = gameCanvas.height = height;
+    scale = Math.max(2, Math.floor(Math.min(width, height) / 240));
+    grassY = Math.floor(height * 0.52);
+    loadSavedFlowers();
+  }
+
+  function getPlantableBottom() {
+    return height - Math.max(10, scale * 4);
+  }
+
+  function getPlantableHeight() {
+    return Math.max(1, getPlantableBottom() - grassY);
+  }
+
+  function isGrass(screenX, screenY) {
+    return screenY >= grassY && screenY <= getPlantableBottom();
+  }
+
+  function getGardenDepthScale(screenY) {
+    const depth = Math.max(0, Math.min(1, (screenY - grassY) / getPlantableHeight()));
+    return 0.58 + depth * 0.72;
+  }
+
+  function paintSky() {
+    const activeSetting = PIXEL_GARDEN_SETTINGS[setting];
+    skyTime += 1;
+    skyCtx.clearRect(0, 0, width, height);
+    const [colors, stops] = activeSetting.sky;
+    const gradient = skyCtx.createLinearGradient(0, 0, 0, height);
+    colors.forEach((color, index) => gradient.addColorStop(stops[index], color));
+    skyCtx.fillStyle = gradient;
+    skyCtx.fillRect(0, 0, width, height);
+    if (activeSetting.stars) {
+      stars.forEach((star) => {
+        const alpha = (setting === "night" ? 0.7 : 0.35) * (0.5 + 0.5 * Math.sin(star.phase + skyTime * star.twinkle));
+        skyCtx.fillStyle = `rgba(255,255,255,${alpha})`;
+        skyCtx.beginPath();
+        skyCtx.arc(star.x * width, star.y * height, star.r, 0, Math.PI * 2);
+        skyCtx.fill();
+      });
+    }
+    if (activeSetting.sun) {
+      const sx = activeSetting.sun.x * width;
+      const sy = activeSetting.sun.y * height;
+      const glow = skyCtx.createRadialGradient(sx, sy, 0, sx, sy, height * 0.35);
+      glow.addColorStop(0, activeSetting.sun.glow);
+      glow.addColorStop(1, "transparent");
+      skyCtx.fillStyle = glow;
+      skyCtx.fillRect(0, 0, width, height);
+      skyCtx.fillStyle = activeSetting.sun.color;
+      skyCtx.beginPath();
+      skyCtx.arc(sx, sy, 28, 0, Math.PI * 2);
+      skyCtx.fill();
+    }
+    if (activeSetting.moon) {
+      const mx = activeSetting.moon.x * width;
+      const my = activeSetting.moon.y * height;
+      const moonRadius = activeSetting.moon.r;
+      skyCtx.fillStyle = "#e8eeff";
+      skyCtx.beginPath();
+      skyCtx.arc(mx, my, moonRadius, 0, Math.PI * 2);
+      skyCtx.fill();
+      skyCtx.fillStyle = "#020a18";
+      skyCtx.beginPath();
+      skyCtx.arc(mx + moonRadius * 0.3, my - moonRadius * 0.1, moonRadius * 0.85, 0, Math.PI * 2);
+      skyCtx.fill();
+    }
+    const mist = skyCtx.createLinearGradient(0, height * 0.34, 0, grassY + 22);
+    mist.addColorStop(0, "rgba(255,255,255,0)");
+    mist.addColorStop(0.52, activeSetting.fog);
+    mist.addColorStop(1, "rgba(255,255,255,0)");
+    skyCtx.fillStyle = mist;
+    skyCtx.fillRect(0, height * 0.34, width, grassY - height * 0.28);
+    if (setting === "night" || setting === "dusk") {
+      fireflies.forEach((firefly) => {
+        firefly.phase += firefly.speed;
+        firefly.x += firefly.drift;
+        if (firefly.x < 0) firefly.x = 1;
+        if (firefly.x > 1) firefly.x = 0;
+        const fy = (firefly.baseY + Math.sin(firefly.phase * 0.8) * firefly.amp) * height;
+        const alpha = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(firefly.phase));
+        const glow = skyCtx.createRadialGradient(firefly.x * width, fy, 0, firefly.x * width, fy, 14);
+        glow.addColorStop(0, `rgba(180,255,160,${alpha * 0.6})`);
+        glow.addColorStop(1, "transparent");
+        skyCtx.fillStyle = glow;
+        skyCtx.beginPath();
+        skyCtx.arc(firefly.x * width, fy, 14, 0, Math.PI * 2);
+        skyCtx.fill();
+      });
+    }
+  }
+
+  function paintGrass() {
+    const activeSetting = PIXEL_GARDEN_SETTINGS[setting];
+    const [g1, g2, g3, g4] = activeSetting.grass;
+    gameCtx.save();
+    gameCtx.fillStyle = darken(g2, 0.72);
+    gameCtx.beginPath();
+    gameCtx.ellipse(width * 0.18, grassY + 8, width * 0.32, 44, 0, 0, Math.PI * 2);
+    gameCtx.ellipse(width * 0.56, grassY + 4, width * 0.38, 50, 0, 0, Math.PI * 2);
+    gameCtx.ellipse(width * 0.9, grassY + 12, width * 0.34, 42, 0, 0, Math.PI * 2);
+    gameCtx.fill();
+    gameCtx.fillStyle = g2;
+    gameCtx.fillRect(0, grassY - 18, width, 32);
+    const gradient = gameCtx.createLinearGradient(0, grassY, 0, height);
+    gradient.addColorStop(0, g3);
+    gradient.addColorStop(0.15, g1);
+    gradient.addColorStop(0.5, g2);
+    gradient.addColorStop(1, darken(g2, 0.5));
+    gameCtx.fillStyle = gradient;
+    gameCtx.fillRect(0, grassY, width, height - grassY);
+    for (let bx = 0; bx < width; bx += 3) {
+      const seed = Math.abs(Math.sin(bx * 12.9898) * 43758.5453) % 1;
+      const bladeHeight = 4 + Math.floor(Math.sin(bx * 0.3 + skyTime * 0.03) * 3 + seed * 3);
+      gameCtx.fillStyle = bx % 6 === 0 ? g3 : g4;
+      gameCtx.fillRect(bx, grassY - bladeHeight, 2, bladeHeight);
+    }
+    const fog = gameCtx.createLinearGradient(0, grassY, 0, grassY + 60);
+    fog.addColorStop(0, activeSetting.fog);
+    fog.addColorStop(1, "transparent");
+    gameCtx.fillStyle = fog;
+    gameCtx.fillRect(0, grassY, width, 60);
+    const foreground = gameCtx.createLinearGradient(0, height * 0.76, 0, height);
+    foreground.addColorStop(0, "rgba(0,0,0,0)");
+    foreground.addColorStop(1, "rgba(0,0,0,0.24)");
+    gameCtx.fillStyle = foreground;
+    gameCtx.fillRect(0, height * 0.76, width, height * 0.24);
+    gameCtx.restore();
+  }
+
+  function paintPlanted() {
+    plantedFlowers.slice().sort((a, b) => a.y - b.y).forEach((plantedFlower) => {
+      plantedFlower.swingPhase += plantedFlower.swingSpeed;
+      const frame = Math.sin(plantedFlower.swingPhase) > 0 ? 0 : 1;
+      const image = assetCache[`${plantedFlower.flower.id}_${setting}_${frame}`];
+      const baseDepthScale = getGardenDepthScale(plantedFlower.y);
+      let flowerScale = baseDepthScale;
+      let alpha = 1;
+      if (plantedFlower.popAnim > 0) {
+        plantedFlower.popAnim = Math.max(0, plantedFlower.popAnim - 0.04);
+        flowerScale = baseDepthScale * (1 + plantedFlower.popAnim * 0.8);
+        alpha = Math.min(1, 1 - plantedFlower.popAnim * 0.3);
+      }
+      gameCtx.save();
+      gameCtx.globalCompositeOperation = "screen";
+      const glow = gameCtx.createRadialGradient(plantedFlower.x, plantedFlower.y + 4, 0, plantedFlower.x, plantedFlower.y + 4, 28 * flowerScale);
+      glow.addColorStop(0, hexToRgba(plantedFlower.flower.petalColor, 0.22));
+      glow.addColorStop(0.5, hexToRgba(plantedFlower.flower.petalColor, 0.08));
+      glow.addColorStop(1, "transparent");
+      gameCtx.fillStyle = glow;
+      gameCtx.beginPath();
+      gameCtx.ellipse(plantedFlower.x, plantedFlower.y + 6, 28 * flowerScale, 8 * flowerScale, 0, 0, Math.PI * 2);
+      gameCtx.fill();
+      gameCtx.restore();
+      const drawWidth = 64 * scale * flowerScale;
+      const drawHeight = 64 * scale * flowerScale;
+      gameCtx.save();
+      gameCtx.globalAlpha = alpha * (0.66 + baseDepthScale * 0.28);
+      gameCtx.imageSmoothingEnabled = false;
+      gameCtx.drawImage(image, plantedFlower.x - drawWidth / 2, plantedFlower.y - drawHeight + 8 * scale, drawWidth, drawHeight);
+      gameCtx.restore();
+    });
+    if (pendingPlant && selectedFlower) {
+      const image = assetCache[`${selectedFlower.id}_${setting}_0`];
+      const previewDepthScale = getGardenDepthScale(pendingPlant.y);
+      const glow = gameCtx.createRadialGradient(pendingPlant.x, pendingPlant.y + 4, 0, pendingPlant.x, pendingPlant.y + 4, 34 * previewDepthScale);
+      gameCtx.save();
+      gameCtx.globalCompositeOperation = "screen";
+      glow.addColorStop(0, "rgba(255,226,150,0.34)");
+      glow.addColorStop(1, "transparent");
+      gameCtx.fillStyle = glow;
+      gameCtx.beginPath();
+      gameCtx.ellipse(pendingPlant.x, pendingPlant.y + 8, 34, 12, 0, 0, Math.PI * 2);
+      gameCtx.fill();
+      gameCtx.restore();
+      gameCtx.save();
+      gameCtx.globalAlpha = 0.68;
+      gameCtx.imageSmoothingEnabled = false;
+      gameCtx.drawImage(image, pendingPlant.x - 32 * scale * previewDepthScale, pendingPlant.y - 56 * scale * previewDepthScale, 64 * scale * previewDepthScale, 64 * scale * previewDepthScale);
+      gameCtx.restore();
+    }
+  }
+
+  function buildTray() {
+    tray.replaceChildren();
+    PIXEL_GARDEN_FLOWERS.forEach((flower) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `memory-flower-button${selectedFlower?.id === flower.id ? " selected" : ""}`;
+      button.dataset.id = flower.id;
+      const canvas = document.createElement("canvas");
+      canvas.width = 64;
+      canvas.height = 64;
+      const context = canvas.getContext("2d");
+      context.imageSmoothingEnabled = false;
+      context.drawImage(assetCache[`${flower.id}_${setting}_0`], 0, 0, 64, 64);
+      const label = document.createElement("span");
+      label.textContent = flower.label;
+      button.append(canvas, label);
+      button.addEventListener("click", () => {
+        selectedFlower = flower;
+        localStorage.setItem(GARDEN_STORAGE_KEYS.selectedFlower, flower.id);
+        buildTray();
+        updateTip();
+      });
+      tray.append(button);
+    });
+  }
+
+  function updateTip(message) {
+    if (message) {
+      tip.textContent = message;
+      return;
+    }
+    if (session.planted) {
+      tip.textContent = state.language === "id"
+        ? "Foto ini sudah menanam satu bunga. Ambil foto berikutnya untuk menanam lagi."
+        : "This photo has planted one flower. Take the next photo to plant again.";
+      return;
+    }
+    tip.textContent = pendingPlant
+      ? (state.language === "id" ? "Tekan Confirm planting untuk menanam." : "Press Confirm planting to plant.")
+      : (selectedFlower ? `${copy.plantPrompt} ${selectedFlower.label}. ${state.language === "id" ? "Ketuk rumput." : "Tap the grass."}` : copy.selectPrompt);
+  }
+
+  function readPixelGarden() {
+    return readJsonStorage(PIXEL_GARDEN_STORAGE_KEY, []);
+  }
+
+  function writePixelGarden(entries) {
+    writeJsonStorage(PIXEL_GARDEN_STORAGE_KEY, Array.isArray(entries) ? entries : []);
+  }
+
+  function loadSavedFlowers() {
+    const garden = readPixelGarden();
+    plantedFlowers = garden.map((entry) => {
+      const flower = PIXEL_GARDEN_FLOWERS.find((item) => item.id === entry.flowerType);
+      if (!flower) return null;
+      return {
+        flower,
+        x: Number(entry.x || 0.5) * width,
+        y: grassY + Number(entry.y || 0.5) * getPlantableHeight(),
+        frame: 0,
+        swingPhase: Math.random() * Math.PI * 2,
+        swingSpeed: 0.015 + Math.random() * 0.02,
+        popAnim: 0,
+        visitorName: entry.visitorName || "",
+        message: entry.message || "",
+        plantedAt: entry.plantedAt,
+      };
+    }).filter(Boolean);
+    badge.textContent = `${plantedFlowers.length} ${state.language === "id" ? "bunga ditanam" : "flowers planted"}`;
+  }
+
+  function selectPlantSpot(clientX, clientY) {
+    if (!selectedFlower) {
+      updateTip(copy.selectPrompt);
+      return;
+    }
+    if (session.planted) {
+      updateTip(state.language === "id"
+        ? "Foto ini sudah menanam satu bunga. Ambil foto berikutnya untuk menanam lagi."
+        : "This photo has planted one flower. Take the next photo to plant again.");
+      return;
+    }
+    const rect = gameCanvas.getBoundingClientRect();
+    const x = (clientX - rect.left) * (width / rect.width);
+    const y = (clientY - rect.top) * (height / rect.height);
+    if (!isGrass(x, y)) {
+      updateTip(state.language === "id" ? "Bunga hanya bisa ditanam di rumput." : "You can only plant on grass.");
+      return;
+    }
+    pendingPlant = { x, y, flower: selectedFlower };
+    confirmButton.disabled = false;
+    updateTip();
+  }
+
+  function commitPendingPlant() {
+    if (!pendingPlant || !selectedFlower || session.planted) return;
+    const visitorName = nameInput.value.trim().slice(0, 18);
+    if (!visitorName) {
+      updateTip(state.language === "id" ? "Isi namamu dulu." : "Please enter your name.");
+      nameInput.focus();
+      return;
+    }
+    const createdAt = Date.now();
+    localStorage.setItem(GARDEN_STORAGE_KEYS.visitorName, visitorName);
+    const entry = {
+      flowerType: selectedFlower.id,
+      flowerLabel: selectedFlower.label,
+      x: pendingPlant.x / width,
+      y: (pendingPlant.y - grassY) / getPlantableHeight(),
+      setting,
+      plantedAt: createdAt,
+      visitorName,
+      message: messageInput.value.trim().slice(0, 54) || null,
+      sessionId: session.id,
+      photoId: session.photoId,
+    };
+    const garden = readPixelGarden();
+    garden.push(entry);
+    writePixelGarden(garden);
+    const appFlower = getFlowerById(selectedFlower.id);
+    const lastPlanted = {
+      id: `flower-${createdAt}`,
+      flowerId: appFlower.id,
+      flowerName: appFlower.displayName,
+      meaning: appFlower.meaning,
+      visitorLine: appFlower.visitorLine,
+      visitorName,
+      xPercent: pendingPlant.x / width * 100,
+      yPercent: pendingPlant.y / height * 100,
+      rotation: -10 + Math.random() * 20,
+      scale: 0.9 + Math.random() * 0.24,
+      photoId: session.photoId,
+      timestamp: new Date(createdAt).toISOString(),
+      createdAt: new Date(createdAt).toISOString(),
+    };
+    const flowers = getGardenFlowers();
+    flowers.push(lastPlanted);
+    saveGardenFlowers(flowers);
+    saveLastPlantedFlower(lastPlanted);
+    plantedFlowers.push({
+      flower: selectedFlower,
+      x: pendingPlant.x,
+      y: pendingPlant.y,
+      frame: 0,
+      swingPhase: Math.random() * Math.PI * 2,
+      swingSpeed: 0.015 + Math.random() * 0.02,
+      popAnim: 1,
+      visitorName,
+      message: entry.message || "",
+      plantedAt: createdAt,
+    });
+    session = { ...session, planted: true, bloomId: lastPlanted.id, photoId: options.photoId || session.photoId };
+    writeJsonStorage(MEMORY_GARDEN_SESSION_KEY, session);
+    pendingPlant = null;
+    confirmButton.disabled = true;
+    nextVisitorButton.hidden = true;
+    badge.textContent = `${plantedFlowers.length} ${state.language === "id" ? "bunga ditanam" : "flowers planted"}`;
+    options.onPlant?.(lastPlanted);
+    playPlantRevealSound();
+    updateTip(state.language === "id"
+      ? "Bungamu sudah masuk taman. Foto berikutnya bisa menanam bunga berikutnya."
+      : "Your bloom has joined the garden. The next photo can plant the next flower.");
+  }
+
+  function showTooltip(clientX, clientY) {
+    const rect = gameCanvas.getBoundingClientRect();
+    const x = (clientX - rect.left) * (width / rect.width);
+    const y = (clientY - rect.top) * (height / rect.height);
+    const hit = plantedFlowers.findLast?.((flower) => Math.hypot(flower.x - x, flower.y - y) <= 32 * scale)
+      || [...plantedFlowers].reverse().find((flower) => Math.hypot(flower.x - x, flower.y - y) <= 32 * scale);
+    if (!hit) {
+      tooltip.hidden = true;
+      return false;
+    }
+    tooltip.hidden = false;
+    tooltip.style.left = `${clientX - rect.left}px`;
+    tooltip.style.top = `${clientY - rect.top}px`;
+    const plantedDate = hit.plantedAt ? new Date(hit.plantedAt) : new Date();
+    const name = document.createElement("strong");
+    name.textContent = hit.visitorName || (state.language === "id" ? "Pengunjung" : "Visitor");
+    const flower = document.createElement("span");
+    flower.textContent = hit.flower.label;
+    const date = document.createElement("small");
+    date.textContent = plantedDate.toLocaleDateString(state.language === "id" ? "id-ID" : "en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    const time = document.createElement("small");
+    time.textContent = plantedDate.toLocaleTimeString(state.language === "id" ? "id-ID" : "en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    tooltip.replaceChildren(name, flower);
+    if (hit.message) {
+      const message = document.createElement("em");
+      message.textContent = hit.message;
+      tooltip.append(message);
+    }
+    tooltip.append(date, time);
+    return true;
+  }
+
+  function startNextVisitor() {
+    session = { id: createMemoryGardenId("session"), planted: false, photoId: options.photoId || getCurrentGardenPhotoId() };
+    writeJsonStorage(MEMORY_GARDEN_SESSION_KEY, session);
+    pendingPlant = null;
+    confirmButton.disabled = true;
+    nextVisitorButton.hidden = true;
+    nameInput.value = "";
+    messageInput.value = "";
+    updateTip();
+  }
+
+  function exportGarden() {
+    const snapshot = document.createElement("canvas");
+    snapshot.width = width;
+    snapshot.height = height;
+    const context = snapshot.getContext("2d");
+    context.drawImage(skyCanvas, 0, 0);
+    context.drawImage(gameCanvas, 0, 0);
+    snapshot.toBlob((blob) => {
+      if (!blob) return;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `marvell20-memory-garden-${Date.now()}.png`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }, "image/png");
+  }
+
+  function loop() {
+    if (isDestroyed) return;
+    paintSky();
+    gameCtx.clearRect(0, 0, width, height);
+    paintGrass();
+    paintPlanted();
+    animationFrame = requestAnimationFrame(loop);
+  }
+
+  function handlePointer(clientX, clientY) {
+    if (showTooltip(clientX, clientY)) return;
+    selectPlantSpot(clientX, clientY);
+  }
+
+  buildAssets();
+  resize();
+  buildTray();
+  updateTip();
+  loop();
+
+  gameCanvas.addEventListener("click", (event) => handlePointer(event.clientX, event.clientY));
+  gameCanvas.addEventListener("touchstart", (event) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    event.preventDefault();
+    handlePointer(touch.clientX, touch.clientY);
+  }, { passive: false });
+  root.querySelectorAll("[data-setting]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setting = button.dataset.setting || "day";
+      root.querySelectorAll("[data-setting]").forEach((item) => item.classList.toggle("active", item === button));
+      buildTray();
+    });
+  });
+  saveButton.addEventListener("click", exportGarden);
+  nameInput.addEventListener("input", () => {
+    localStorage.setItem(GARDEN_STORAGE_KEYS.visitorName, nameInput.value.trim());
+  });
+  confirmButton.addEventListener("click", commitPendingPlant);
+  nextVisitorButton.addEventListener("click", startNextVisitor);
+  if (session.planted) {
+    nextVisitorButton.hidden = true;
+    confirmButton.disabled = true;
+    updateTip();
+  }
+  const resizeObserver = "ResizeObserver" in window ? new ResizeObserver(resize) : null;
+  resizeObserver?.observe(root);
+  if (!resizeObserver) window.addEventListener("resize", resize);
+
+  return {
+    destroy() {
+      isDestroyed = true;
+      cancelAnimationFrame(animationFrame);
+      resizeObserver?.disconnect();
+      if (!resizeObserver) window.removeEventListener("resize", resize);
+    },
+  };
+}
+
 function createPlantedFlowerElement(data, options = {}) {
   const flower = getFlowerById(data.flowerId);
   const node = document.createElement("button");
   node.type = "button";
-  node.className = `planted-flower${options.final ? " planted-flower-final" : ""}`;
+  node.className = [
+    "planted-flower",
+    options.final ? "planted-flower-final" : "",
+    options.animate ? "is-newly-planted" : "",
+  ].filter(Boolean).join(" ");
   node.dataset.plantedFlowerId = data.id || "";
   node.style.left = `${(data.xPercent ?? 50) + (data.xOffset ?? 0)}%`;
   node.style.top = `${(data.yPercent ?? 70) + (data.yOffset ?? 0)}%`;
@@ -3938,21 +4625,453 @@ function navigateToFinalMark() {
   }
 }
 
+const MEMORY_GARDEN_ASSET_BASE = "assets/memory-garden";
+const MEMORY_GARDEN_BLOOMS_KEY = "memory-garden-blooms-v1";
+const MEMORY_GARDEN_SESSION_KEY = "memory-garden-current-session-v2";
+const MEMORY_GARDEN_MOOD_KEY = "memory-garden-mood-v1";
+const MEMORY_GARDEN_MOODS = ["morning", "dusk", "night"];
+const MEMORY_GARDEN_FLOWERS = ["rose", "orchid", "carnation", "anthurium", "lily", "tulip", "chrysanthemum", "hydrangea"];
+const MEMORY_GARDEN_AREAS = [
+  { x: 18, y: 78, rx: 16, ry: 10 },
+  { x: 50, y: 78, rx: 24, ry: 12 },
+  { x: 82, y: 78, rx: 16, ry: 10 },
+  { x: 50, y: 64, rx: 28, ry: 12 },
+  { x: 27, y: 63, rx: 15, ry: 8 },
+  { x: 73, y: 63, rx: 15, ry: 8 },
+];
+
+function createMemoryGardenId(prefix = "mg") {
+  if (window.crypto?.randomUUID) return `${prefix}-${window.crypto.randomUUID()}`;
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getMemoryGardenAutoMood() {
+  const hour = new Date().getHours();
+  if (hour >= 16 && hour <= 18) return "dusk";
+  if (hour >= 19 || hour <= 5) return "night";
+  return "morning";
+}
+
+function readMemoryGardenBlooms() {
+  return readJsonStorage(MEMORY_GARDEN_BLOOMS_KEY, []);
+}
+
+function writeMemoryGardenBlooms(blooms) {
+  writeJsonStorage(MEMORY_GARDEN_BLOOMS_KEY, Array.isArray(blooms) ? blooms : []);
+}
+
+function getCurrentGardenPhotoId() {
+  return state.storyPhotoRecord?.id
+    || activeSessionRecord?.id
+    || state.sessionId
+    || "archive-only";
+}
+
+function getMemoryGardenSession(photoId = getCurrentGardenPhotoId()) {
+  const stored = readJsonStorage(MEMORY_GARDEN_SESSION_KEY, null);
+  if (stored?.id && stored.photoId === photoId) return stored;
+  const session = { id: createMemoryGardenId("session"), planted: false, photoId };
+  writeJsonStorage(MEMORY_GARDEN_SESSION_KEY, session);
+  return session;
+}
+
+function getMemoryFlowerLabel(id) {
+  return FLOWERS.find((flower) => flower.id === id)?.displayName
+    || id.replace(/(^|-)([a-z])/g, (_, dash, char) => `${dash ? " " : ""}${char.toUpperCase()}`);
+}
+
+function createPixelAssetMemoryGarden(stage, options = {}) {
+  const copy = getCopy();
+  const root = document.createElement("div");
+  root.className = "memory-garden-pixel";
+  root.innerHTML = `
+    <button class="memory-settings-button" type="button" aria-label="Garden settings">Auto</button>
+    <section class="memory-settings-panel" hidden>
+      <button type="button" data-mood-choice="auto">Auto</button>
+      <button type="button" data-mood-choice="morning">Morning</button>
+      <button type="button" data-mood-choice="dusk">Dusk</button>
+      <button type="button" data-mood-choice="night">Night</button>
+    </section>
+    <section class="memory-scene" aria-label="Memory Garden">
+      <div class="memory-bg memory-bg-a"></div>
+      <div class="memory-bg memory-bg-b"></div>
+      <div class="memory-sky-shimmer"></div>
+      <div class="memory-particles memory-particles-back"></div>
+      <section class="memory-garden-layer"></section>
+      <div class="memory-front-grass-layer"></div>
+      <div class="memory-particles memory-particles-front"></div>
+      <div class="memory-vignette"></div>
+    </section>
+    <section class="memory-ui-panel">
+      <div class="memory-ui-heading">
+        <strong>Memory Garden</strong>
+        <span class="memory-count">0 flowers planted</span>
+      </div>
+      <label>Your name <input class="memory-name" maxlength="18" autocomplete="off"></label>
+      <label>Leave a short message <input class="memory-message" maxlength="54" autocomplete="off"></label>
+      <div class="memory-flower-picker"></div>
+      <p class="memory-instruction">Tap the grass to choose where it grows.</p>
+      <div class="memory-ui-actions">
+        <button type="button" class="memory-confirm" disabled>Confirm planting</button>
+        <button type="button" class="memory-next-visitor" hidden>Start next visitor</button>
+      </div>
+    </section>
+    <div class="memory-tooltip" hidden></div>
+    <div class="memory-toast" role="status" aria-live="polite"></div>
+  `;
+  stage.append(root);
+
+  const settingsButton = root.querySelector(".memory-settings-button");
+  const settingsPanel = root.querySelector(".memory-settings-panel");
+  const scene = root.querySelector(".memory-scene");
+  const bgA = root.querySelector(".memory-bg-a");
+  const bgB = root.querySelector(".memory-bg-b");
+  const gardenLayer = root.querySelector(".memory-garden-layer");
+  const frontGrassLayer = root.querySelector(".memory-front-grass-layer");
+  const picker = root.querySelector(".memory-flower-picker");
+  const nameInput = root.querySelector(".memory-name");
+  const messageInput = root.querySelector(".memory-message");
+  const confirmButton = root.querySelector(".memory-confirm");
+  const nextVisitorButton = root.querySelector(".memory-next-visitor");
+  const count = root.querySelector(".memory-count");
+  const instruction = root.querySelector(".memory-instruction");
+  const tooltip = root.querySelector(".memory-tooltip");
+  const toast = root.querySelector(".memory-toast");
+
+  let moodChoice = localStorage.getItem(MEMORY_GARDEN_MOOD_KEY) || "auto";
+  let mood = moodChoice === "auto" ? getMemoryGardenAutoMood() : moodChoice;
+  let frame = "a";
+  let selectedFlower = localStorage.getItem(GARDEN_STORAGE_KEYS.selectedFlower) || "rose";
+  let session = getMemoryGardenSession();
+  let pending = null;
+  let previewNode = null;
+  let frameTimer = 0;
+  let moodTimer = 0;
+  let toastTimer = 0;
+
+  nameInput.value = localStorage.getItem(GARDEN_STORAGE_KEYS.visitorName) || "";
+
+  const flowerAsset = (flowerId, assetFrame = frame, assetMood = mood) => `${MEMORY_GARDEN_ASSET_BASE}/flowers/${assetMood}/${flowerId}_${assetFrame}.png`;
+  const backgroundAsset = (assetMood, bgFrame) => `${MEMORY_GARDEN_ASSET_BASE}/backgrounds/${assetMood}/frame_${bgFrame}.png`;
+
+  function showToast(text) {
+    window.clearTimeout(toastTimer);
+    toast.textContent = text;
+    toast.classList.add("is-visible");
+    toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 1800);
+  }
+
+  function applyMood() {
+    mood = moodChoice === "auto" ? getMemoryGardenAutoMood() : moodChoice;
+    root.dataset.mood = mood;
+    settingsButton.textContent = moodChoice === "auto" ? "Auto" : moodChoice;
+    bgA.style.backgroundImage = `url("${backgroundAsset(mood, "01")}")`;
+    bgB.style.backgroundImage = `url("${backgroundAsset(mood, "02")}")`;
+    root.querySelectorAll("[data-mood-choice]").forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.moodChoice === moodChoice);
+    });
+    updateSpriteFrames();
+  }
+
+  function getDepthScale(y) {
+    const t = Math.max(0, Math.min(1, (y - 45) / 45));
+    return 0.45 + t * 0.75;
+  }
+
+  function getZIndex(y) {
+    return Math.round(y * 10);
+  }
+
+  function pointIsPlantable(x, y) {
+    return MEMORY_GARDEN_AREAS.some((area) => {
+      const dx = (x - area.x) / area.rx;
+      const dy = (y - area.y) / area.ry;
+      return dx * dx + dy * dy <= 1;
+    });
+  }
+
+  function isTooClose(x, y, blooms = readMemoryGardenBlooms()) {
+    return blooms.some((bloom) => {
+      const dx = bloom.x - x;
+      const dy = bloom.y - y;
+      return Math.hypot(dx * 1.15, dy * 1.8) < 4.8;
+    });
+  }
+
+  function renderPicker() {
+    picker.replaceChildren();
+    MEMORY_GARDEN_FLOWERS.forEach((flowerId) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "memory-flower-pick";
+      button.classList.toggle("is-selected", flowerId === selectedFlower);
+      button.dataset.flowerId = flowerId;
+      const img = document.createElement("img");
+      img.src = flowerAsset(flowerId, "a");
+      img.alt = "";
+      const label = document.createElement("span");
+      label.textContent = getMemoryFlowerLabel(flowerId);
+      button.append(img, label);
+      button.addEventListener("click", () => {
+        selectedFlower = flowerId;
+        localStorage.setItem(GARDEN_STORAGE_KEYS.selectedFlower, flowerId);
+        renderPicker();
+        clearPreview();
+        instruction.textContent = "Tap the grass to choose where it grows.";
+      });
+      picker.append(button);
+    });
+  }
+
+  function createBloomNode(bloom, isNew = false) {
+    const node = document.createElement("button");
+    node.type = "button";
+    node.className = `memory-planted-bloom${isNew ? " is-new" : ""}`;
+    node.dataset.bloomId = bloom.id;
+    node.style.setProperty("--x", `${bloom.x}%`);
+    node.style.setProperty("--y", `${bloom.y}%`);
+    node.style.setProperty("--scale", bloom.scale);
+    node.style.setProperty("--rotation", `${bloom.rotation}deg`);
+    node.style.zIndex = String(getZIndex(bloom.y));
+    const glow = document.createElement("img");
+    glow.className = "memory-ground-glow";
+    glow.src = `${MEMORY_GARDEN_ASSET_BASE}/overlays/ground_glow.png`;
+    glow.alt = "";
+    const shadow = document.createElement("span");
+    shadow.className = "memory-back-shadow";
+    const img = document.createElement("img");
+    img.className = "memory-flower-sprite";
+    img.src = flowerAsset(bloom.flower, bloom.frame || frame);
+    img.alt = `${getMemoryFlowerLabel(bloom.flower)} planted by ${bloom.name || "a visitor"}`;
+    const grass = document.createElement("img");
+    grass.className = "memory-front-grass";
+    grass.src = `${MEMORY_GARDEN_ASSET_BASE}/overlays/front_grass.png`;
+    grass.alt = "";
+    node.append(glow, shadow, img, grass);
+    node.addEventListener("click", (event) => {
+      event.stopPropagation();
+      showBloomTooltip(bloom, node);
+    });
+    return node;
+  }
+
+  function renderBlooms() {
+    gardenLayer.querySelectorAll(".memory-planted-bloom:not(.memory-preview)").forEach((node) => node.remove());
+    const blooms = readMemoryGardenBlooms();
+    blooms
+      .slice()
+      .sort((a, b) => a.y - b.y)
+      .forEach((bloom) => gardenLayer.append(createBloomNode(bloom)));
+    count.textContent = `${blooms.length} ${blooms.length === 1 ? "flower" : "flowers"} planted`;
+  }
+
+  function updateSpriteFrames() {
+    root.querySelectorAll(".memory-flower-pick").forEach((button) => {
+      const img = button.querySelector("img");
+      if (img) img.src = flowerAsset(button.dataset.flowerId, "a");
+    });
+    root.querySelectorAll(".memory-planted-bloom").forEach((node) => {
+      const bloom = readMemoryGardenBlooms().find((item) => item.id === node.dataset.bloomId);
+      const img = node.querySelector(".memory-flower-sprite");
+      if (bloom && img) img.src = flowerAsset(bloom.flower, frame);
+    });
+    if (previewNode) {
+      const img = previewNode.querySelector(".memory-flower-sprite");
+      if (img) img.src = flowerAsset(selectedFlower, frame);
+    }
+  }
+
+  function clearPreview() {
+    pending = null;
+    previewNode?.remove();
+    previewNode = null;
+    confirmButton.disabled = true;
+  }
+
+  function setPreview(x, y) {
+    clearPreview();
+    pending = {
+      x,
+      y,
+      flower: selectedFlower,
+      scale: getDepthScale(y),
+      rotation: -5 + Math.random() * 10,
+    };
+    previewNode = createBloomNode({
+      id: "preview",
+      name: "",
+      flower: selectedFlower,
+      x,
+      y,
+      scale: pending.scale,
+      rotation: pending.rotation,
+    });
+    previewNode.classList.add("memory-preview");
+    previewNode.disabled = true;
+    gardenLayer.append(previewNode);
+    confirmButton.disabled = false;
+    instruction.textContent = "Confirm planting, or tap another grass spot.";
+  }
+
+  function showBloomTooltip(bloom, node) {
+    const date = bloom.createdAt ? new Date(bloom.createdAt) : new Date();
+    const name = document.createElement("strong");
+    name.textContent = bloom.name || "Visitor";
+    const flower = document.createElement("span");
+    flower.textContent = getMemoryFlowerLabel(bloom.flower);
+    const plantedAt = document.createElement("small");
+    plantedAt.textContent = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    tooltip.replaceChildren(name, flower);
+    if (bloom.message) {
+      const message = document.createElement("em");
+      message.textContent = `"${bloom.message}"`;
+      tooltip.append(message);
+    }
+    tooltip.append(plantedAt);
+    const rect = node.getBoundingClientRect();
+    const stageRect = root.getBoundingClientRect();
+    tooltip.style.left = `${rect.left - stageRect.left + rect.width / 2}px`;
+    tooltip.style.top = `${rect.top - stageRect.top}px`;
+    tooltip.hidden = false;
+  }
+
+  function handleSceneTap(event) {
+    if (event.target.closest(".memory-ui-panel, .memory-settings-button, .memory-settings-panel, .memory-planted-bloom")) return;
+    tooltip.hidden = true;
+    if (session.planted) {
+      showToast("This visit has already planted one flower.");
+      return;
+    }
+    const rect = scene.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
+    if (!pointIsPlantable(x, y)) {
+      showToast("Plant on the grass.");
+      return;
+    }
+    if (isTooClose(x, y)) {
+      showToast("Too close to another flower.");
+      return;
+    }
+    setPreview(x, y);
+  }
+
+  function confirmPlanting() {
+    if (!pending || session.planted) return;
+    const name = nameInput.value.trim().slice(0, 18);
+    if (!name) {
+      showToast("Please enter your name.");
+      nameInput.focus();
+      return;
+    }
+    const createdAt = new Date().toISOString();
+    const bloom = {
+      id: createMemoryGardenId("bloom"),
+      sessionId: session.id,
+      name,
+      message: messageInput.value.trim().slice(0, 54),
+      flower: pending.flower,
+      x: Number(pending.x.toFixed(2)),
+      y: Number(pending.y.toFixed(2)),
+      scale: Number(pending.scale.toFixed(3)),
+      rotation: Number(pending.rotation.toFixed(2)),
+      createdAt,
+      frame: "a",
+    };
+    const blooms = readMemoryGardenBlooms();
+    blooms.push(bloom);
+    writeMemoryGardenBlooms(blooms);
+    localStorage.setItem(GARDEN_STORAGE_KEYS.visitorName, name);
+    const appFlower = getFlowerById(bloom.flower);
+    const lastPlanted = {
+      id: bloom.id,
+      flowerId: appFlower.id,
+      flowerName: appFlower.displayName,
+      meaning: appFlower.meaning,
+      visitorLine: appFlower.visitorLine,
+      visitorName: name,
+      xPercent: bloom.x,
+      yPercent: bloom.y,
+      rotation: bloom.rotation,
+      scale: bloom.scale,
+      photoId: session.photoId,
+      timestamp: createdAt,
+      createdAt,
+    };
+    const appBlooms = getGardenFlowers();
+    appBlooms.push(lastPlanted);
+    saveGardenFlowers(appBlooms);
+    saveLastPlantedFlower(lastPlanted);
+    session = { ...session, planted: true, bloomId: bloom.id, photoId: session.photoId || getCurrentGardenPhotoId() };
+    writeJsonStorage(MEMORY_GARDEN_SESSION_KEY, session);
+    clearPreview();
+    renderBlooms();
+    const newNode = gardenLayer.querySelector(`[data-bloom-id="${bloom.id}"]`);
+    newNode?.classList.add("is-new");
+    window.setTimeout(() => newNode?.classList.remove("is-new"), 1100);
+    options.onPlant?.(lastPlanted);
+    playPlantRevealSound();
+    showToast("Your flower has joined the garden.");
+    nextVisitorButton.hidden = false;
+    confirmButton.disabled = true;
+    instruction.textContent = "Your flower has joined the garden.";
+  }
+
+  function startNextVisitor() {
+    session = { id: createMemoryGardenId("session"), planted: false };
+    writeJsonStorage(MEMORY_GARDEN_SESSION_KEY, session);
+    nameInput.value = "";
+    messageInput.value = "";
+    nextVisitorButton.hidden = true;
+    clearPreview();
+    instruction.textContent = "Tap the grass to choose where it grows.";
+  }
+
+  renderPicker();
+  renderBlooms();
+  applyMood();
+  if (session.planted) {
+    nextVisitorButton.hidden = false;
+    instruction.textContent = "This visit has already planted one flower.";
+  }
+  frameTimer = window.setInterval(() => {
+    frame = frame === "a" ? "b" : "a";
+    updateSpriteFrames();
+  }, 900);
+  moodTimer = window.setInterval(() => {
+    if (moodChoice === "auto") applyMood();
+  }, 60000);
+
+  settingsButton.addEventListener("click", () => {
+    settingsPanel.hidden = !settingsPanel.hidden;
+  });
+  settingsPanel.querySelectorAll("[data-mood-choice]").forEach((button) => {
+    button.addEventListener("click", () => {
+      moodChoice = button.dataset.moodChoice || "auto";
+      localStorage.setItem(MEMORY_GARDEN_MOOD_KEY, moodChoice);
+      settingsPanel.hidden = true;
+      applyMood();
+    });
+  });
+  scene.addEventListener("pointerdown", handleSceneTap);
+  confirmButton.addEventListener("click", confirmPlanting);
+  nextVisitorButton.addEventListener("click", startNextVisitor);
+
+  return {
+    destroy() {
+      window.clearInterval(frameTimer);
+      window.clearInterval(moodTimer);
+      window.clearTimeout(toastTimer);
+    },
+  };
+}
+
 function buildGardenPlantScene(section) {
   const copy = getCopy();
+  const photoId = state.storyPhotoRecord?.id || activeSessionRecord?.id || state.sessionId || getCurrentGardenPhotoId();
+  const photoSession = getMemoryGardenSession(photoId);
   const stage = document.createElement("div");
-  stage.className = "archive-garden-stage";
-  const plantedLayer = document.createElement("div");
-  plantedLayer.className = "archive-garden-planted";
-  const dreamLayer = document.createElement("div");
-  dreamLayer.className = "archive-garden-dreams";
-  for (let index = 0; index < 16; index += 1) {
-    const spark = document.createElement("span");
-    spark.style.setProperty("--spark-index", index);
-    dreamLayer.append(spark);
-  }
-  const reaction = document.createElement("span");
-  reaction.className = "archive-garden-reaction";
+  stage.className = "archive-garden-stage archive-memory-garden-stage";
   const copyBlock = appendSceneCopy(stage, {
     kicker: "Trace 07",
     title: copy.plantingTitle,
@@ -3962,63 +5081,29 @@ function buildGardenPlantScene(section) {
   const button = createArchiveButton(copy.leaveMyMark, "archive-garden-finish action action-primary");
   button.hidden = true;
   copyBlock.append(button);
-  stage.append(dreamLayer, plantedLayer, reaction);
   section.append(stage);
 
   let pendingFlower = null;
-  const renderStored = () => {
-    plantedLayer.replaceChildren();
-    getGardenFlowers().forEach((flower) => {
-      const node = createPlantedFlowerElement(flower);
-      node.querySelector(".flower-hitbox")?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        openPlantedFlowerPanel(section, flower.id);
-      });
-      plantedLayer.append(node);
-    });
-  };
-  const plantAt = (event) => {
-    if (event.target.closest("button, input, .archive-flower-panel")) return;
-    const selected = getSelectedFlower();
-    const rect = stage.getBoundingClientRect();
-    const xPercent = Math.max(8, Math.min(92, ((event.clientX - rect.left) / rect.width) * 100));
-    const yPercent = Math.max(36, Math.min(88, ((event.clientY - rect.top) / rect.height) * 100));
-    const visitorName = localStorage.getItem(GARDEN_STORAGE_KEYS.visitorName) || "";
-    pendingFlower = {
-      id: `flower-${state.sessionId || Date.now()}`,
-      flowerId: selected.id,
-      flowerName: selected.displayName,
-      meaning: selected.meaning,
-      visitorLine: selected.visitorLine,
-      visitorName,
-      xPercent,
-      yPercent,
-      ...createFlowerVariation(),
-      timestamp: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    };
-    section.dataset.lastPlantedFlowerId = selected.id;
-    const flowers = getGardenFlowers().filter((flower) => flower.id !== pendingFlower.id);
-    flowers.push(pendingFlower);
-    saveGardenFlowers(flowers);
-    saveLastPlantedFlower(pendingFlower);
-    renderStored();
-    reaction.style.left = `${xPercent}%`;
-    reaction.style.top = `${yPercent}%`;
-    reaction.classList.remove("is-active");
-    void reaction.offsetWidth;
-    reaction.classList.add("is-active");
+  const gardenGame = createPixelMemoryGarden(stage, {
+    photoId,
+    onPlant(flower) {
+      pendingFlower = flower;
+      section.dataset.lastPlantedFlowerId = flower.flowerId;
+      saveLastPlantedFlower(flower);
+      markFinalDirty();
+      hideGuidanceHint();
+      completeInteraction("gardenPlant");
+      section.classList.add("has-planted");
+      button.hidden = false;
+      button.disabled = false;
+    },
+  });
+  section.cleanupScene = () => gardenGame?.destroy?.();
+  if (photoSession.planted && readJsonStorage(GARDEN_STORAGE_KEYS.lastPlantedFlower, null)) {
     button.hidden = false;
     button.disabled = false;
     section.classList.add("has-planted");
-    playPlantRevealSound();
-  };
-  stage.addEventListener("pointerdown", (event) => {
-    if (event.target.closest("button, input, .archive-flower-panel")) return;
-    event.preventDefault();
-    closePlantedFlowerPanel(section);
-    plantAt(event);
-  });
+  }
   button.addEventListener("click", (event) => {
     event.stopPropagation();
     event.preventDefault();
@@ -4026,12 +5111,21 @@ function buildGardenPlantScene(section) {
     hideGuidanceHint();
     guardedNavigate(navigateToFinalMark);
   });
-  renderStored();
+}
+
+function getLastPlantedFlowerForCurrentPhoto() {
+  const photoId = getCurrentGardenPhotoId();
+  const photoSession = getMemoryGardenSession(photoId);
+  const stored = readJsonStorage(GARDEN_STORAGE_KEYS.lastPlantedFlower, null);
+  if (stored?.flowerId && (stored.photoId === photoId || stored.id === photoSession.bloomId)) return stored;
+  const flowers = getGardenFlowers();
+  const matching = [...flowers].reverse().find((flower) => flower?.photoId === photoId);
+  return matching || null;
 }
 
 function buildMarkFinalScene(section) {
   const copy = getCopy();
-  const planted = readJsonStorage(GARDEN_STORAGE_KEYS.lastPlantedFlower, null) || {
+  const planted = getLastPlantedFlowerForCurrentPhoto() || {
     flowerId: getSelectedFlower().id,
     flowerName: getSelectedFlower().displayName,
     visitorLine: getSelectedFlower().visitorLine,
@@ -4204,6 +5298,10 @@ function buildTimelineScene(section) {
   slider.setAttribute("aria-hidden", "true");
   world.append(slider);
 
+  const timelineGuide = document.createElement("div");
+  timelineGuide.className = "archive-timeline-guide";
+  timelineGuide.innerHTML = `<span>${copy.timelineHint}</span><b aria-hidden="true"></b>`;
+
   const finalLine = document.createElement("div");
   finalLine.className = "archive-timeline-final";
   finalLine.style.left = `${finalStop.x}px`;
@@ -4211,7 +5309,7 @@ function buildTimelineScene(section) {
   appendLines(finalLine, copy.timelineFinalLines || []);
   world.append(finalLine);
 
-  stage.append(video, world, header);
+  stage.append(video, world, header, timelineGuide);
   section.append(stage);
 
   let progress = 0;
@@ -4269,6 +5367,7 @@ function buildTimelineScene(section) {
     world.style.transform = `translate3d(${translateX.toFixed(1)}px, ${translateY.toFixed(1)}px, 0) scale(${camera.scale.toFixed(3)})`;
     slider.style.left = `${activePoint.x}px`;
     slider.style.top = `${activePoint.y}px`;
+    timelineGuide.classList.toggle("is-hidden", progress > 0.1);
     beatLayer.querySelectorAll(".archive-timeline-beat").forEach((beat) => {
       const stopIndex = Number(beat.dataset.stopIndex || 0);
       const distance = Math.abs(stopIndex - activeIndex);
@@ -4549,10 +5648,6 @@ function goToScene(index, options = {}) {
     const activeIntro = storyChaptersContainer.querySelector(".archive-scene-nameIntro.is-active");
     queueSceneTimer(() => activeIntro?.resetNameIntroFog?.(), 120);
   }
-  if (archiveScenes[nextIndex]?.id === "flowersOccasion") {
-    const activeOccasion = storyChaptersContainer.querySelector(".archive-scene-flowersOccasion.is-active");
-    queueSceneTimer(() => activeOccasion?.startOccasionSequence?.(), 90);
-  }
   if (archiveScenes[nextIndex]?.id === "montage") {
     const activeMontage = storyChaptersContainer.querySelector(".archive-scene-montage.is-active");
     queueSceneTimer(() => startArchiveMontage(activeMontage), 450);
@@ -4589,48 +5684,111 @@ function scheduleStoryParallax() {}
 
 function updateStoryParallax() {}
 
+function enterMemoryGardenOnly() {
+  stopCamera();
+  try {
+    clearStoryTimers();
+    state.storyPhotoRecord = null;
+    state.storyRendered = true;
+    state.sceneUnlocked = false;
+    const gardenIndex = archiveScenes.findIndex((scene) => scene.id === "gardenPlant");
+    state.currentScene = Math.max(0, gardenIndex);
+    const gardenScene = archiveScenes[gardenIndex] || archiveScenes.find((scene) => scene.id === "gardenPlant");
+    const section = document.createElement("section");
+    section.className = "archive-scene archive-scene-gardenPlant is-active";
+    section.dataset.sceneIndex = String(state.currentScene);
+    section.dataset.sceneId = "gardenPlant";
+    section.dataset.hint = getArchiveSceneHint(gardenScene);
+    section.dataset.intent = gardenScene?.intent || "tap";
+    buildGardenPlantScene(section, state.currentScene);
+    const bloom = document.createElement("div");
+    bloom.className = "archive-bloom";
+    storyChaptersContainer?.replaceChildren(bloom, section);
+    storyChaptersContainer?.style.setProperty("--archive-progress", "1");
+    if (storyChaptersContainer) storyChaptersContainer.dataset.currentScene = "gardenPlant";
+    storyProgress?.replaceChildren();
+    setText("#story-title", getArchiveSceneTitle(gardenScene));
+    setView("story");
+    storyChaptersContainer?.focus({ preventScroll: true });
+  } catch (error) {
+    console.warn("MARVELL20 memory garden direct entry failed", error);
+  }
+  state.isSoundEnabled = true;
+  syncSoundToggle();
+  unlockStoryAudio(true).then(startAmbientSound).catch(() => {});
+}
+
 function getCloudinaryPublicId(record, extension) {
   const base = createPortraitFileName(record, extension).replace(/\.[^.]+$/, "");
   return extension === "gif" ? `${base}-gif` : base;
 }
 
 function getCloudinaryDeliveryUrl(upload, extension) {
+  if (upload.secure_url) return upload.secure_url;
+  if (upload.url) return upload.url.replace(/^http:/, "https:");
   const resourceType = upload.resource_type || "image";
   const format = upload.format || extension;
   const publicId = upload.public_id || "";
   return `https://res.cloudinary.com/${cloudinaryCloudName}/${resourceType}/upload/${publicId}.${format}`;
 }
 
-async function uploadToCloudinary(blob, record, extension = "png") {
+async function uploadToCloudinaryOnce(blob, record, extension = "png", attempt = 1) {
   const endpoint = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/auto/upload`;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), cloudinaryUploadTimeoutMs);
   const formData = new FormData();
   formData.append("upload_preset", cloudinaryUploadPreset);
   formData.append("folder", cloudinaryUploadFolder);
-  formData.append("public_id", getCloudinaryPublicId(record, extension));
+  formData.append("public_id", `${getCloudinaryPublicId(record, extension)}-${attempt}`);
   formData.append("tags", ["MARVELL20", record.selectedFormat, record.selectedFilter, record.selectedPaper].filter(Boolean).join(","));
   formData.append("file", blob, createPortraitFileName(record, extension));
 
-  const response = await fetch(endpoint, {
-    method: "POST",
-    body: formData,
-  });
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      body: formData,
+      signal: controller.signal,
+    });
+    const responseText = await response.text();
 
-  if (!response.ok) {
-    throw new Error(`Cloudinary upload failed with ${response.status}`);
+    if (!response.ok) {
+      let message = responseText;
+      try {
+        message = JSON.parse(responseText)?.error?.message || responseText;
+      } catch (error) {
+        // Keep raw Cloudinary response text.
+      }
+      throw new Error(`Cloudinary upload failed with ${response.status}: ${message}`);
+    }
+
+    return responseText ? JSON.parse(responseText) : {};
+  } finally {
+    window.clearTimeout(timeout);
   }
+}
 
-  return response.json();
+async function uploadToCloudinary(blob, record, extension = "png") {
+  let lastError = null;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await uploadToCloudinaryOnce(blob, record, extension, attempt);
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) await sleep(450 * attempt);
+    }
+  }
+  throw lastError || new Error("Cloudinary upload failed");
 }
 
 async function ensureCloudinaryImage(record) {
   if (record.cloudinaryUrl) return record;
 
-  const finalBlob = await canvasToBlob(finalCanvas, "image/png");
+  const finalBlob = await canvasToCloudinaryImageBlob(finalCanvas);
   try {
-    const upload = await uploadToCloudinary(finalBlob, record, "png");
+    const upload = await uploadToCloudinary(finalBlob, record, "jpg");
     activeSessionRecord = {
       ...record,
-      cloudinaryUrl: getCloudinaryDeliveryUrl(upload, "png"),
+      cloudinaryUrl: getCloudinaryDeliveryUrl(upload, "jpg"),
       cloudinaryPublicId: upload.public_id,
       cloudinaryAssetId: upload.asset_id,
       cloudinaryResourceType: upload.resource_type,
@@ -4675,6 +5833,24 @@ function showCloudinaryQr(record, type = "photo") {
   }
 }
 
+async function canvasToCloudinaryImageBlob(canvas) {
+  const area = canvas.width * canvas.height;
+  if (area <= cloudinaryMaxUploadArea) {
+    return canvasToBlob(canvas, "image/jpeg", cloudinaryImageQuality);
+  }
+
+  const scale = Math.sqrt(cloudinaryMaxUploadArea / area);
+  const uploadCanvas = document.createElement("canvas");
+  uploadCanvas.width = Math.max(1, Math.round(canvas.width * scale));
+  uploadCanvas.height = Math.max(1, Math.round(canvas.height * scale));
+  const context = uploadCanvas.getContext("2d", { alpha: false });
+  if (!context) return canvasToBlob(canvas, "image/jpeg", cloudinaryImageQuality);
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, uploadCanvas.width, uploadCanvas.height);
+  context.drawImage(canvas, 0, 0, uploadCanvas.width, uploadCanvas.height);
+  return canvasToBlob(uploadCanvas, "image/jpeg", cloudinaryImageQuality);
+}
+
 function canvasToBlob(canvas, type = "image/jpeg", quality = finalImageQuality) {
   return new Promise((resolve, reject) => {
     if (canvas.toBlob) {
@@ -4707,8 +5883,16 @@ function setExportBusy(isBusy) {
   exportButton.disabled = isBusy;
   airdropButton.disabled = isBusy;
   gifButton.disabled = isBusy;
-  storyContinueButton.disabled = isBusy;
+  storyContinueButton.disabled = false;
   finalNextButton.disabled = isBusy || !state.selectedPaper;
+}
+
+function continueToArchiveFromFinal(event) {
+  event?.preventDefault();
+  event?.stopPropagation();
+  storyContinueButton.disabled = false;
+  hideSaveConfirmation();
+  guardedNavigate(() => enterArchive(activeSessionRecord), 650);
 }
 
 async function showPhotoQr() {
@@ -4720,7 +5904,7 @@ async function showPhotoQr() {
     const uploadedRecord = await ensureCloudinaryImage(record);
     showCloudinaryQr(uploadedRecord, "photo");
     if (uploadedRecord.cloudinaryUrl) {
-      await updateSessionRecord({ exportStatus: "scanned_png" });
+      await updateSessionRecord({ exportStatus: "scanned_cloudinary" });
     }
   } catch (error) {
     console.warn("MARVELL20 Cloudinary scan failed", error);
@@ -5190,17 +6374,26 @@ function refreshRenderedPreviews() {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=photobooth-76").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=photobooth-91").catch(() => {});
   });
 }
 
-beginButton.addEventListener("click", (event) => {
+function handleBeginTap(event) {
+  event?.preventDefault();
   event.stopPropagation();
-  beginSession();
-});
+  guardedNavigate(() => {
+    beginSession();
+  }, 900);
+}
+
+beginButton.addEventListener("click", handleBeginTap);
+beginButton.addEventListener("pointerup", handleBeginTap);
+beginButton.addEventListener("touchend", handleBeginTap, { passive: false });
 homeView.addEventListener("pointerup", (event) => {
   if (event.target.closest("button")) return;
-  beginSession();
+  guardedNavigate(() => {
+    beginSession();
+  }, 900);
 });
 glimpseButton?.addEventListener("click", startPhotoboothFromGlimpse);
 archiveButton?.addEventListener("click", () => enterArchive(activeSessionRecord));
@@ -5227,7 +6420,7 @@ paperNextButton.addEventListener("click", showPaperStep);
 finalNextButton.addEventListener("click", showFinal);
 exportButton.addEventListener("click", showPhotoQr);
 airdropButton.addEventListener("click", shareFinalImage);
-storyContinueButton.addEventListener("click", () => enterArchive(activeSessionRecord));
+storyContinueButton.addEventListener("click", continueToArchiveFromFinal);
 gifButton.addEventListener("click", showGifQr);
 startAgainButton.addEventListener("click", startAgain);
 scanBackButton.addEventListener("click", () => {

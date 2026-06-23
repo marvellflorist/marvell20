@@ -1,0 +1,137 @@
+{
+  "game": "Memory Garden",
+  "notes": "Use the backgrounds as mood/frame references, but plantable spots must be invisible in code. Do not show holes or obvious pads. Flowers use two sway frames per mood.",
+  "moods": [
+    "morning",
+    "dusk",
+    "night"
+  ],
+  "backgrounds": {
+    "morning": {
+      "frameA": "assets/backgrounds/morning/frame_01.png",
+      "frameB": "assets/backgrounds/morning/frame_02.png"
+    },
+    "dusk": {
+      "frameA": "assets/backgrounds/dusk/frame_01.png",
+      "frameB": "assets/backgrounds/dusk/frame_02.png"
+    },
+    "night": {
+      "frameA": "assets/backgrounds/night/frame_01.png",
+      "frameB": "assets/backgrounds/night/frame_02.png"
+    }
+  },
+  "flowers": {
+    "morning": {
+      "rose": {
+        "a": "assets/flowers/morning/rose_a.png",
+        "b": "assets/flowers/morning/rose_b.png"
+      },
+      "orchid": {
+        "a": "assets/flowers/morning/orchid_a.png",
+        "b": "assets/flowers/morning/orchid_b.png"
+      },
+      "carnation": {
+        "a": "assets/flowers/morning/carnation_a.png",
+        "b": "assets/flowers/morning/carnation_b.png"
+      },
+      "anthurium": {
+        "a": "assets/flowers/morning/anthurium_a.png",
+        "b": "assets/flowers/morning/anthurium_b.png"
+      },
+      "lily": {
+        "a": "assets/flowers/morning/lily_a.png",
+        "b": "assets/flowers/morning/lily_b.png"
+      },
+      "tulip": {
+        "a": "assets/flowers/morning/tulip_a.png",
+        "b": "assets/flowers/morning/tulip_b.png"
+      },
+      "chrysanthemum": {
+        "a": "assets/flowers/morning/chrysanthemum_a.png",
+        "b": "assets/flowers/morning/chrysanthemum_b.png"
+      },
+      "hydrangea": {
+        "a": "assets/flowers/morning/hydrangea_a.png",
+        "b": "assets/flowers/morning/hydrangea_b.png"
+      }
+    },
+    "dusk": {
+      "rose": {
+        "a": "assets/flowers/dusk/rose_a.png",
+        "b": "assets/flowers/dusk/rose_b.png"
+      },
+      "orchid": {
+        "a": "assets/flowers/dusk/orchid_a.png",
+        "b": "assets/flowers/dusk/orchid_b.png"
+      },
+      "carnation": {
+        "a": "assets/flowers/dusk/carnation_a.png",
+        "b": "assets/flowers/dusk/carnation_b.png"
+      },
+      "anthurium": {
+        "a": "assets/flowers/dusk/anthurium_a.png",
+        "b": "assets/flowers/dusk/anthurium_b.png"
+      },
+      "lily": {
+        "a": "assets/flowers/dusk/lily_a.png",
+        "b": "assets/flowers/dusk/lily_b.png"
+      },
+      "tulip": {
+        "a": "assets/flowers/dusk/tulip_a.png",
+        "b": "assets/flowers/dusk/tulip_b.png"
+      },
+      "chrysanthemum": {
+        "a": "assets/flowers/dusk/chrysanthemum_a.png",
+        "b": "assets/flowers/dusk/chrysanthemum_b.png"
+      },
+      "hydrangea": {
+        "a": "assets/flowers/dusk/hydrangea_a.png",
+        "b": "assets/flowers/dusk/hydrangea_b.png"
+      }
+    },
+    "night": {
+      "rose": {
+        "a": "assets/flowers/night/rose_a.png",
+        "b": "assets/flowers/night/rose_b.png"
+      },
+      "orchid": {
+        "a": "assets/flowers/night/orchid_a.png",
+        "b": "assets/flowers/night/orchid_b.png"
+      },
+      "carnation": {
+        "a": "assets/flowers/night/carnation_a.png",
+        "b": "assets/flowers/night/carnation_b.png"
+      },
+      "anthurium": {
+        "a": "assets/flowers/night/anthurium_a.png",
+        "b": "assets/flowers/night/anthurium_b.png"
+      },
+      "lily": {
+        "a": "assets/flowers/night/lily_a.png",
+        "b": "assets/flowers/night/lily_b.png"
+      },
+      "tulip": {
+        "a": "assets/flowers/night/tulip_a.png",
+        "b": "assets/flowers/night/tulip_b.png"
+      },
+      "chrysanthemum": {
+        "a": "assets/flowers/night/chrysanthemum_a.png",
+        "b": "assets/flowers/night/chrysanthemum_b.png"
+      },
+      "hydrangea": {
+        "a": "assets/flowers/night/hydrangea_a.png",
+        "b": "assets/flowers/night/hydrangea_b.png"
+      }
+    }
+  },
+  "particles": [
+    "assets/particles/petal.png",
+    "assets/particles/dust.png",
+    "assets/particles/spark.png",
+    "assets/particles/firefly.png"
+  ],
+  "overlays": [
+    "assets/overlays/ground_glow.png",
+    "assets/overlays/front_grass.png"
+  ]
+}

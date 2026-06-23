@@ -1,4 +1,4 @@
-const CACHE_NAME = "marvell-20-v129";
+const CACHE_NAME = "marvell-20-v151";
 const APP_SHELL = [
   "./index.html",
   "./photobooth.html",
@@ -53,6 +53,12 @@ APP_SHELL.push(
   "./assets/archive/current-closeup-bouquet-2.jpeg",
   "./assets/archive/slider.png",
   "./footer.jpeg"
+);
+
+APP_SHELL.push(
+  "./bloom-garden/index.html",
+  "./bloom-garden/styles.css",
+  "./bloom-garden/game.js"
 );
 
 self.addEventListener("install", (event) => {
