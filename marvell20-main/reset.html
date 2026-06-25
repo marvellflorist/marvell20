@@ -50,25 +50,59 @@
   <body>
     <main>
       <h1>MARVELL 20</h1>
-      <p>Refreshing booth files...</p>
+      <p id="statusText">Returning to MARVELL 20...</p>
     </main>
     <script>
-      async function resetBoothCache() {
-        if ("serviceWorker" in navigator) {
+      const fallbackDestination = "./photobooth.html";
+      const safeDestinations = new Set([
+        "index.html",
+        "invitation.html",
+        "photobooth.html",
+        "reservation.html",
+      ]);
+      const params = new URLSearchParams(window.location.search);
+      const statusText = document.querySelector("#statusText");
+
+      function getDestination() {
+        const requested = params.get("to") || params.get("back") || fallbackDestination;
+        const url = new URL(requested, window.location.href);
+        const fileName = url.pathname.split("/").pop() || "index.html";
+
+        if (url.origin !== window.location.origin || !safeDestinations.has(fileName)) {
+          return new URL(fallbackDestination, window.location.href);
+        }
+
+        return url;
+      }
+
+      async function refreshBoothCache() {
+        if ("serviceWorker" in navigator && params.get("refresh") === "1") {
           const registrations = await navigator.serviceWorker.getRegistrations();
           await Promise.all(registrations.map((registration) => registration.unregister()));
         }
 
-        if ("caches" in window) {
+        if ("caches" in window && params.get("refresh") === "1") {
           const names = await caches.keys();
           await Promise.all(names.map((name) => caches.delete(name)));
         }
-
-        window.location.replace("./?v=filter-6");
       }
 
-      resetBoothCache().catch(() => {
-        window.location.replace("./?v=filter-6");
+      async function returnWithProgress() {
+        const destination = getDestination();
+        if (statusText) {
+          statusText.textContent = params.get("refresh") === "1"
+            ? "Refreshing cached files, then returning..."
+            : "Returning with saved progress...";
+        }
+        await refreshBoothCache();
+        destination.searchParams.set("cached", "1");
+        window.location.replace(destination);
+      }
+
+      returnWithProgress().catch(() => {
+        const destination = getDestination();
+        destination.searchParams.set("cached", "1");
+        window.location.replace(destination);
       });
     </script>
   </body>

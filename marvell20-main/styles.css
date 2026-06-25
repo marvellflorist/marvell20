@@ -69,6 +69,52 @@ button {
   cursor: pointer;
 }
 
+.booth-back-button {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px 0 9px;
+  border: 1px solid rgba(247, 247, 247, 0.24);
+  background: rgba(5, 5, 5, 0.52);
+  color: var(--ivory);
+  font-size: 11px;
+  font-weight: 780;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+  transition: border-color 180ms var(--ease), background 180ms var(--ease), transform 180ms var(--ease);
+}
+
+.booth-back-button:hover,
+.booth-back-button:focus-visible {
+  border-color: rgba(247, 247, 247, 0.48);
+  background: rgba(5, 5, 5, 0.74);
+}
+
+.booth-back-button:active {
+  transform: translateX(-1px);
+}
+
+.booth-back-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.booth-back-button[hidden] {
+  display: none;
+}
+
 .app-shell {
   position: relative;
   width: 100%;

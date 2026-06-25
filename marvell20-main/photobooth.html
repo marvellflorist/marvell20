@@ -19,6 +19,12 @@
     <link rel="stylesheet" href="styles.css?v=photobooth-99" />
   </head>
   <body>
+    <button class="booth-back-button" id="boothBackButton" type="button" aria-label="Go back" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15 6l-6 6 6 6" />
+      </svg>
+      <span>Back</span>
+    </button>
     <main class="app-shell" data-view="home" data-format="strip">
       <div class="top-controls booth-controls" aria-label="Experience controls">
         <button class="sound-toggle" id="soundToggleButton" type="button" aria-label="Play sound" aria-pressed="false">

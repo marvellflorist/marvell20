@@ -1,7 +1,8 @@
-const CACHE_NAME = "marvell-20-v158";
+const CACHE_NAME = "marvell-20-v161";
 const APP_SHELL = [
   "./index.html",
   "./photobooth.html",
+  "./reset.html",
   "./app.js",
   "./styles.css",
   "./invitation.css",
@@ -52,6 +53,7 @@ self.addEventListener("fetch", (event) => {
   const freshFiles = new Set([
     "index.html",
     "photobooth.html",
+    "reset.html",
     "invitation.js",
     "invitation.css",
     "app.js",

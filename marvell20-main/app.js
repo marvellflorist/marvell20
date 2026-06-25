@@ -1,5 +1,6 @@
 const appShell = document.querySelector(".app-shell");
 const isPhotoboothHidden = false;
+const boothBackButton = document.querySelector("#boothBackButton");
 const homeView = document.querySelector(".view-home");
 const beginButton = document.querySelector("#beginButton");
 const archiveButton = document.querySelector("#archiveButton");
@@ -620,6 +621,7 @@ const state = {
   sceneTimers: [],
   storyScrollFrame: 0,
   storyTweenFrame: 0,
+  cameraReturnView: "",
 };
 
 function getCopy(language = state.language) {
@@ -706,12 +708,54 @@ function setView(view) {
   appShell.dataset.view = view;
   document.documentElement.dataset.view = view;
   saveConfirmation.hidden = true;
+  syncBoothBackButton();
   resetInactivityTimer();
   scheduleGuidanceHint();
   if (view === "story") {
     startAmbientSound();
     scheduleGuidanceHint(3800);
   }
+}
+
+function getBoothBackTarget(view = appShell.dataset.view || "home") {
+  if (view === "home") return "";
+  if (view === "glimpse") return "home";
+  if (view === "format") return "glimpse";
+  if (view === "camera") return state.cameraReturnView || "format";
+  if (view === "review") return "camera";
+  if (view === "tone") return "review";
+  if (view === "paper") return "tone";
+  if (view === "final") return "paper";
+  if (view === "scan") return "final";
+  if (view === "archive") return hasCompletedPhotoSession() ? "final" : "home";
+  if (view === "story") return hasCompletedPhotoSession() ? "final" : "home";
+  return "home";
+}
+
+function syncBoothBackButton() {
+  if (!boothBackButton) return;
+  const target = getBoothBackTarget();
+  boothBackButton.hidden = !target;
+  boothBackButton.disabled = !target || state.isCapturing;
+}
+
+async function goToBoothPreviousStep() {
+  const currentView = appShell.dataset.view || "home";
+  const target = getBoothBackTarget(currentView);
+  if (!target || state.isCapturing) return;
+
+  hideSaveConfirmation();
+  if (currentView === "camera" && target === "format") stopCamera();
+  if (currentView === "camera") state.cameraReturnView = "";
+  if (currentView === "story") stopAmbientSound();
+
+  if (target === "camera") {
+    setView("camera");
+    await startCamera();
+    return;
+  }
+
+  setView(target);
 }
 
 function sleep(ms) {
@@ -824,6 +868,7 @@ function setBusy(isBusy) {
   captureButton.disabled = isBusy;
   changeCameraButton.disabled = isBusy;
   cameraStage.classList.toggle("is-capturing", isBusy);
+  syncBoothBackButton();
   if (isBusy) hideGuidanceHint();
   else scheduleGuidanceHint();
 }
@@ -843,6 +888,7 @@ function startPhotoboothFromGlimpse() {
 
 async function chooseFormat(format) {
   state.selectedFormat = format === "single" ? "single" : "strip";
+  state.cameraReturnView = "format";
   appShell.dataset.format = state.selectedFormat;
   document.documentElement.dataset.format = state.selectedFormat;
   syncCameraStageRatio();
@@ -2633,6 +2679,7 @@ function drawSessionQrCode(canvas, payload) {
 function beginRetake(index = state.selectedIndex) {
   if (!state.captures.length) return;
   state.retakeIndex = index;
+  state.cameraReturnView = "review";
   setView("camera");
 }
 
@@ -6562,6 +6609,9 @@ homeView.addEventListener("pointerup", (event) => {
   }, 900);
 });
 glimpseButton?.addEventListener("click", startPhotoboothFromGlimpse);
+boothBackButton?.addEventListener("click", () => {
+  guardedNavigate(goToBoothPreviousStep, 420);
+});
 archiveButton?.addEventListener("click", (event) => {
   event.preventDefault();
   event.stopPropagation();
